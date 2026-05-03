@@ -25,7 +25,6 @@
       <button class="btn ghost" id="btnExport">Exportar JSON</button>
       <label class="btn ghost file-label" for="jsonImport">Importar JSON</label>
       <input id="jsonImport" type="file" accept="application/json" hidden />
-      <button class="btn ghost" id="btnPublishDigital">Exportar cardápio público</button>
       <button class="btn primary" id="btnPdf">Gerar PDF</button>
     </div>
   </header>
@@ -75,13 +74,6 @@
           <span>02</span>
           <h2>Formato e visual</h2>
         </div>
-        <label>Modo de uso
-          <select id="usageMode">
-            <option value="print">Impressão — pasta/PDF</option>
-            <option value="digital">Cardápio digital — hospedagem online</option>
-            <option value="promo">Divulgação — feed/stories</option>
-          </select>
-        </label>
         <div class="grid-2">
           <label>Formato
             <select id="pageFormat">
@@ -131,13 +123,6 @@
             </select>
           </label>
         </div>
-        <label>Aproveitamento da página
-          <select id="pageUtilization">
-            <option value="safe">Seguro — mais respiro</option>
-            <option value="balanced">Equilibrado — recomendado</option>
-            <option value="max">Máximo — usa melhor o espaço</option>
-          </select>
-        </label>
         <div class="grid-2">
           <label>Limite de páginas
             <input id="maxPages" type="number" min="1" max="9" value="9" />
@@ -153,7 +138,6 @@
           <label><input id="showDescriptions" type="checkbox" /> Mostrar descrições</label>
           <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
           <label><input id="showDigitalMenu" type="checkbox" /> Adicionar menu digital com atalhos</label>
-          <label><input id="livePrecision" type="checkbox" /> Ajuste fino automático ao editar</label>
           <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
         <label>Escala das imagens dos itens
@@ -165,7 +149,7 @@
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">Para não travar, o preview usa atualização leve durante a edição. O ajuste fino real entra ao organizar/exportar, ou ao ativar o <strong>ajuste fino automático</strong>. Escolha o <strong>modo de uso</strong>, ajuste o <strong>aproveitamento da página</strong> e use o organizador automático para evitar sobras, páginas quebradas e texto pequeno demais.</p>
+        <p class="panel-note">Agora você pode testar <strong>10 paletas</strong>, <strong>10 marcas d'água</strong> e ajustar a fonte em níveis seguros. O botão de organizar recalcula a distribuição para o modelo selecionado.</p>
       </section>
 
 
@@ -239,7 +223,6 @@
       </div>
       <label>Descrição<textarea data-input="description" rows="2"></textarea></label>
       <label>Observações<textarea data-input="notes" rows="2"></textarea></label>
-      <div class="checks editor-checks"><label><input data-input="highlight" type="checkbox" /> Marcar como destaque</label></div>
       <label>Imagem do item<input data-input="image" type="file" accept="image/*" /></label>
     </article>
   </template>

@@ -1,13 +1,10 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v10-modos-publicar-diagramacao';
-const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v10';
+const STORAGE_KEY = 'casteluche-menu-generator-v8-menu-digital-imagens';
+const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v8';
 const MAX_PAGES = 9;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
 let isBound = false;
-let precisePreviewTimer = null;
-let precisePreviewToken = 0;
-let isPreciseRendering = false;
 
 const PRINT_SECTION_ORDER = [
   'Feijoada', 'Pratos Principais', 'Pratos Nordestinos', 'Pratos Feitos', 'Adicionais',
@@ -44,49 +41,6 @@ const FORMAT_CONFIGS = {
   }
 };
 
-
-const USAGE_MODES = {
-  print: {
-    label: 'Impressão',
-    pageFormat: 'folder-9-a4',
-    showDigitalMenu: false,
-    density: 'compact',
-    pageUtilization: 'balanced',
-    showDescriptions: true,
-    showImages: false,
-    fontScale: 100,
-    imageScale: 100
-  },
-  digital: {
-    label: 'Cardápio digital',
-    pageFormat: 'a4-portrait',
-    showDigitalMenu: true,
-    density: 'normal',
-    pageUtilization: 'balanced',
-    showDescriptions: true,
-    showImages: true,
-    fontScale: 104,
-    imageScale: 115
-  },
-  promo: {
-    label: 'Divulgação',
-    pageFormat: 'feed-4x5',
-    showDigitalMenu: false,
-    density: 'normal',
-    pageUtilization: 'safe',
-    showDescriptions: true,
-    showImages: true,
-    fontScale: 104,
-    imageScale: 125
-  }
-};
-
-const PAGE_UTILIZATION = {
-  safe: { label: 'Seguro', capacityBoost: -1.4 },
-  balanced: { label: 'Equilibrado', capacityBoost: 0.4 },
-  max: { label: 'Máximo aproveitamento', capacityBoost: 2.4 }
-};
-
 const PALETTES = {
   boteco: { label: 'Boteco Ouro', paper: '#f1e5ca', ink: '#1b1916', muted: '#6a5843', gold: '#c28b35', goldSoft: '#ead5a6', line: 'rgba(64,45,24,.18)', headStart: '#111111', headEnd: '#2a1d10', pageGlow1: 'rgba(255,255,255,.42)', pageGlow2: 'rgba(201,151,63,.18)', noteBg: '#ead5a6', bodyBg: '#0d0d0d', bodyGlow: '#333333' },
   barro: { label: 'Barro Quente', paper: '#f4e4d4', ink: '#25150f', muted: '#7c5546', gold: '#c56b45', goldSoft: '#f0cdb4', line: 'rgba(88,44,28,.18)', headStart: '#2e120d', headEnd: '#6b2f1d', pageGlow1: 'rgba(255,255,255,.40)', pageGlow2: 'rgba(197,107,69,.18)', noteBg: '#f0cdb4', bodyBg: '#120b08', bodyGlow: '#4b1d14' },
@@ -101,7 +55,7 @@ const PALETTES = {
 };
 
 const WATERMARKS = {
-  none: { label: "Sem marca d'água", svg: "" },
+  none: { label: 'Sem marca d\'água', svg: '' },
   sanfona: { label: 'Sanfona', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M150 930c70-110 160-180 300-180s230 70 300 180"/><rect x="170" y="420" width="120" height="180" rx="18"/><rect x="610" y="420" width="120" height="180" rx="18"/><path d="M290 445 610 575M290 480 610 610M290 515 610 645M290 550 610 680"/><path d="M220 505h20M220 535h20M680 505h20M680 535h20"/><path d="M350 790c30-18 55-22 95-22 45 0 75 6 105 24"/></g></svg>` },
   mandacaru: { label: 'Mandacaru', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><circle cx="640" cy="250" r="95"/><path d="M640 95v-45M640 455v-45M485 250h-45M795 250h-45M530 140l-32-32M750 360l32 32M750 140l32-32M530 360l-32 32"/><path d="M450 1000V390"/><path d="M450 610c-96 0-126-74-126-172"/><path d="M450 720c118 0 160-92 160-212"/><path d="M450 805c-76 0-100 68-100 120"/><path d="M450 900c66 0 92-50 92-110"/><path d="M280 1000h360"/></g></svg>` },
   chapeu: { label: 'Chapéu de couro', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M150 620c120-150 480-150 600 0"/><path d="M270 620c0-130 360-130 360 0"/><path d="M210 620c0 110 95 195 240 195s240-85 240-195"/><path d="M310 625c65 28 160 38 280 0"/><path d="M210 865c80-20 160-30 240-30s160 10 240 30"/></g></svg>` },
@@ -137,14 +91,10 @@ function normalizeSettings() {
     logoScale: 100,
     imageScale: 100,
     showDigitalMenu: false,
-    usageMode: 'print',
-    pageUtilization: 'balanced',
     watermark: 'none',
     fontScale: 100,
     ...(state.settings || {})
   };
-  if (!USAGE_MODES[state.settings.usageMode]) state.settings.usageMode = 'print';
-  if (!PAGE_UTILIZATION[state.settings.pageUtilization]) state.settings.pageUtilization = 'balanced';
   if (!FORMAT_CONFIGS[state.settings.pageFormat]) state.settings.pageFormat = 'folder-9-a4';
   if (!PALETTES[state.settings.theme]) state.settings.theme = 'boteco';
   if (!WATERMARKS[state.settings.watermark]) state.settings.watermark = 'none';
@@ -155,7 +105,6 @@ function normalizeSettings() {
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.settings.imageScale = clampImageScale(state.settings.imageScale);
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
-  state.settings.livePrecision = state.settings.livePrecision === true;
   state.items = Array.isArray(state.items) ? state.items : [];
 }
 
@@ -419,9 +368,7 @@ function setControlValues() {
     restaurantAddress: state.restaurant.address || '',
     restaurantTagline: state.restaurant.tagline || '',
     qrLabel: state.restaurant.qrLabel || 'Cardápio virtual',
-    usageMode: state.settings.usageMode,
     pageFormat: state.settings.pageFormat,
-    pageUtilization: state.settings.pageUtilization,
     themeSelect: state.settings.theme,
     densitySelect: state.settings.density,
     watermarkSelect: state.settings.watermark,
@@ -439,7 +386,6 @@ function setControlValues() {
   $('#showImages').checked = state.settings.showImages === true;
   $('#breakBySection').checked = state.settings.breakBySection === true;
   $('#showDigitalMenu').checked = state.settings.showDigitalMenu === true;
-  if ($('#livePrecision')) $('#livePrecision').checked = state.settings.livePrecision === true;
   $('#showQrCode').checked = state.settings.showQrCode === true;
   const fontScaleLabel = $('#fontScaleLabel');
   if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
@@ -451,15 +397,6 @@ function setControlValues() {
 
 function bindSettings() {
   setControlValues();
-
-  $('#usageMode').addEventListener('change', event => {
-    applyUsageMode(event.target.value);
-  });
-
-  $('#pageUtilization').addEventListener('change', event => {
-    state.settings.pageUtilization = event.target.value;
-    renderPreview();
-  });
 
   const mappedFields = {
     restaurantName: 'name', restaurantWhatsapp: 'whatsapp', restaurantInstagram: 'instagram',
@@ -569,13 +506,6 @@ function bindSettings() {
     state.settings.showDigitalMenu = event.target.checked;
     renderPreview();
   });
-
-  if ($('#livePrecision')) {
-    $('#livePrecision').addEventListener('change', event => {
-      state.settings.livePrecision = event.target.checked;
-      renderPreview(event.target.checked ? { precise: true } : {});
-    });
-  }
   $('#breakBySection').addEventListener('change', event => {
     state.settings.breakBySection = event.target.checked;
     renderPreview();
@@ -612,14 +542,6 @@ function renderEditor() {
 
     $$('[data-input]', card).forEach(input => {
       const key = input.dataset.input;
-      if (input.type === 'checkbox') {
-        input.checked = item[key] === true;
-        input.addEventListener('change', event => {
-          item[key] = event.target.checked;
-          renderPreview();
-        });
-        return;
-      }
       if (input.type !== 'file') input.value = item[key] || '';
       input.addEventListener('input', event => {
         item[key] = event.target.value;
@@ -683,13 +605,11 @@ function groupItemsForLayout(items) {
         description: item.description || '',
         notes: item.notes || '',
         image: item.image || '',
-        highlight: item.highlight === true,
         variants: []
       });
     }
     const group = map.get(key);
     if (!group.image && item.image) group.image = item.image;
-    if (item.highlight === true) group.highlight = true;
     group.variants.push({
       label: buildVariantLabel(item),
       price: item.price || '',
@@ -717,11 +637,8 @@ function itemWeight(item) {
   if (state.settings.showImages && item.image) {
     weight += 0.28 + ((state.settings.imageScale - 100) / 100) * 0.9;
   }
-  if (item.highlight) weight += 0.45;
   const fontImpact = (state.settings.fontScale - 100) / 100;
   weight += fontImpact * 1.4;
-  if (state.settings.pageUtilization === 'max') weight *= 0.88;
-  if (state.settings.pageUtilization === 'safe') weight *= 1.08;
   return Math.max(0.6, weight);
 }
 
@@ -734,7 +651,6 @@ function pageCapacity(pageIndex, config) {
   if (pageIndex === 0 && state.settings.showDigitalMenu) capacity -= 3.2;
   const fontImpact = (state.settings.fontScale - 100) / 4; // 104 => -1 capacity approximately
   capacity -= fontImpact;
-  capacity += (PAGE_UTILIZATION[state.settings.pageUtilization]?.capacityBoost || 0);
   return Math.max(4.4, capacity);
 }
 
@@ -809,7 +725,7 @@ function paginateSections(sections, maxPages, config) {
 function applyPaperVariables(paper) {
   const config = getCurrentConfig();
   const palette = getPalette();
-  paper.className = `paper menu-book ${config.css} density-${state.settings.density} mode-${state.settings.usageMode} util-${state.settings.pageUtilization}`;
+  paper.className = `paper menu-book ${config.css} density-${state.settings.density}`;
   paper.style.setProperty('--page-w', `${config.widthPx}px`);
   paper.style.setProperty('--page-h', `${config.heightPx}px`);
   paper.style.setProperty('--folder-columns', config.columns);
@@ -831,26 +747,7 @@ function applyPaperVariables(paper) {
   paper.style.setProperty('--wm-svg', getWatermarkDataUrl());
 }
 
-function schedulePrecisePreview() {
-  if (!state.settings.livePrecision) return;
-  precisePreviewToken += 1;
-  const token = precisePreviewToken;
-  if (precisePreviewTimer) clearTimeout(precisePreviewTimer);
-  precisePreviewTimer = setTimeout(() => {
-    precisePreviewTimer = null;
-    if (token !== precisePreviewToken || isPreciseRendering) return;
-    requestAnimationFrame(() => renderPreview({ precise: true, fromIdle: true }));
-  }, 850);
-}
-
-function cancelScheduledPrecisePreview() {
-  precisePreviewToken += 1;
-  if (precisePreviewTimer) clearTimeout(precisePreviewTimer);
-  precisePreviewTimer = null;
-}
-
-function renderPreview(options = {}) {
-  const precise = options === true || options.precise === true;
+function renderPreview() {
   normalizeSettings();
   const paper = $('#pdfArea');
   applyPaperVariables(paper);
@@ -858,132 +755,15 @@ function renderPreview(options = {}) {
   const maxPages = clampPages(state.settings.maxPages);
   const sections = createPrintSections(filteredItems());
   const result = paginateSections(sections, maxPages, config);
-  let pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
-  let overflowCount = result.overflowCount || 0;
+  const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
   const menuSections = sections.map(section => section.name);
-  let adjustments = 0;
 
-  // Renderização rápida: atualiza a tela imediatamente sem medir altura real.
-  // A medição fina fica para depois que o usuário para de mexer, evitando travamentos.
-  renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
-
-  if (precise) {
-    cancelScheduledPrecisePreview();
-    isPreciseRendering = true;
-    const fitted = fitPagesByRealHeight(paper, pages, maxPages, config, menuSections, overflowCount);
-    isPreciseRendering = false;
-    pages = fitted.pages;
-    overflowCount = fitted.overflowCount;
-    adjustments = fitted.adjustments;
-    renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
-    updatePageInfo(pages, config, maxPages, overflowCount, adjustments, true);
-    return;
-  }
-
-  updatePageInfo(pages, config, maxPages, overflowCount, 0, false);
-  schedulePrecisePreview();
-}
-
-function renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections) {
-  const safePages = pages.filter(page => page.sections.some(section => section.items.length));
-  const outputPages = safePages.length ? safePages : [{ sections: [], weight: 0 }];
-  paper.innerHTML = outputPages
-    .map((page, index) => renderMenuPage(page, index + 1, outputPages.length, overflowCount, config, menuSections))
-    .join('');
-}
-
-function updatePageInfo(pages, config, maxPages, overflowCount = 0, adjustments = 0, precise = false) {
+  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config, menuSections)).join('');
   const pageInfo = $('#pageInfo');
-  if (!pageInfo) return;
-  const overflow = overflowCount > 0 ? ` · atenção: ${overflowCount} item(ns) ainda precisam de mais espaço` : '';
-  const adjusted = precise ? (adjustments > 0 ? ` · ajuste real aplicado` : ` · ajuste real ok`) : (state.settings.livePrecision ? ` · preview rápido` : ` · preview leve`);
-  pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${adjusted}${overflow}`;
-}
-
-function pageIsVisuallyOverflowing(pageEl) {
-  if (!pageEl) return false;
-  const body = $('.folder-body', pageEl);
-  if (!body) return false;
-  return body.scrollHeight > body.clientHeight + 3;
-}
-
-function firstOverflowingPageIndex(paper) {
-  const pageEls = $$('.menu-page', paper);
-  return pageEls.findIndex(pageIsVisuallyOverflowing);
-}
-
-function normalizePagesForLayout(pages) {
-  pages.forEach(page => {
-    page.sections = page.sections
-      .map(section => ({ ...section, items: section.items.filter(Boolean) }))
-      .filter(section => section.items.length);
-    page.weight = page.sections.reduce((total, section) => (
-      total + 1.25 + section.items.reduce((sum, item) => sum + itemWeight(item), 0)
-    ), 0);
-  });
-  return pages.filter(page => page.sections.length);
-}
-
-function moveLastItemToNextPage(pages, pageIndex, maxPages) {
-  const from = pages[pageIndex];
-  if (!from) return false;
-
-  let fromSectionIndex = from.sections.length - 1;
-  while (fromSectionIndex >= 0 && (!from.sections[fromSectionIndex].items || !from.sections[fromSectionIndex].items.length)) {
-    fromSectionIndex -= 1;
+  if (pageInfo) {
+    const overflow = result.overflowCount > 0 ? ` · ${result.overflowCount} item(ns) concentrados na última página` : '';
+    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${overflow}`;
   }
-  if (fromSectionIndex < 0) return false;
-
-  const fromSection = from.sections[fromSectionIndex];
-  const movedItem = fromSection.items.pop();
-  const sectionName = fromSection.name;
-  if (!movedItem) return false;
-  if (!fromSection.items.length) from.sections.splice(fromSectionIndex, 1);
-
-  if (!pages[pageIndex + 1]) {
-    if (pages.length >= maxPages) {
-      fromSection.items.push(movedItem);
-      return false;
-    }
-    pages[pageIndex + 1] = { sections: [], weight: 0 };
-  }
-
-  const nextPage = pages[pageIndex + 1];
-  const firstSection = nextPage.sections[0];
-  if (firstSection && firstSection.name === sectionName) {
-    firstSection.items.unshift(movedItem);
-    firstSection.continuation = true;
-  } else {
-    nextPage.sections.unshift({ name: sectionName, items: [movedItem], continuation: true });
-  }
-  normalizePagesForLayout(pages);
-  return true;
-}
-
-function fitPagesByRealHeight(paper, originalPages, maxPages, config, menuSections, initialOverflowCount = 0) {
-  let pages = structuredClone(originalPages);
-  let overflowCount = initialOverflowCount;
-  let adjustments = 0;
-  const limit = 260;
-
-  for (let attempt = 0; attempt < limit; attempt += 1) {
-    renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
-    const overflowIndex = firstOverflowingPageIndex(paper);
-    if (overflowIndex === -1) {
-      return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
-    }
-
-    const moved = moveLastItemToNextPage(pages, overflowIndex, maxPages);
-    if (!moved) {
-      const page = pages[overflowIndex];
-      const remaining = page?.sections?.reduce((total, section) => total + section.items.length, 0) || 0;
-      overflowCount += remaining;
-      return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
-    }
-    adjustments += 1;
-  }
-
-  return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
 }
 
 function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, menuSections) {
@@ -991,7 +771,7 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, men
     ? `<div class="folder-warning">Há conteúdo demais na última página. Tente reduzir descrições, diminuir a fonte, trocar para densidade compacta ou organizar o layout novamente.</div>`
     : '';
   return `
-    <article class="menu-page ${pageNumber === 1 ? 'first-page' : 'inner-page'}" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
+    <article class="menu-page" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
       ${renderWatermark()}
       ${renderPageHeader(pageNumber, totalPages)}
       <main class="folder-body">
@@ -1088,21 +868,15 @@ function renderDigitalMenu(sectionNames = []) {
 function renderFolderSection(section) {
   const title = section.continuation ? `${section.name} — continuação` : section.name;
   const idAttr = !section.continuation ? ` id="cat-${slugify(section.name)}"` : '';
-  const backLink = state.settings.showDigitalMenu && !section.continuation ? '<a class="section-back-link" href="#menu-root">↑ Menu</a>' : '';
   return `
     <section class="folder-section"${idAttr}>
-      <h3>
-        <span>${escapeHtml(title)}</span>
-        <em>${section.items.length} item(ns)</em>
-        ${backLink}
-      </h3>
+      <h3>${escapeHtml(title)}</h3>
       <div class="folder-grid">
         ${section.items.map(renderFolderItem).join('')}
       </div>
     </section>
   `;
 }
-
 
 function renderPriceBalloon(variant) {
   if (variant.blankPrice) return `<span class="price-balloon empty"></span>`;
@@ -1118,18 +892,17 @@ function renderFolderItem(item) {
   const desc = state.settings.showDescriptions !== false && item.description ? `<p class="folder-desc">${escapeHtml(item.description)}</p>` : '';
   const note = item.notes ? `<span class="folder-note">${escapeHtml(item.notes)}</span>` : '';
   const image = state.settings.showImages && item.image ? `<img class="folder-thumb" src="${item.image}" alt="${escapeHtml(item.product)}" />` : '';
-  const highlightClass = item.highlight ? ' highlight' : '';
   const variantList = !singleVariant ? `
     <div class="folder-variants">
       ${variants.map(variant => `
         <span class="folder-variant ${variant.review ? 'review' : ''}${variant.blankPrice ? ' empty' : ''}">
-          <span class="variant-label">${escapeHtml(variant.label || 'Opção')}</span>
+          <span>${escapeHtml(variant.label || 'Opção')}</span>
           ${renderPriceBalloon(variant)}
         </span>`).join('')}
     </div>` : '';
 
   return `
-    <article class="folder-item ${image ? 'with-thumb' : ''}${highlightClass}">
+    <article class="folder-item ${image ? 'with-thumb' : ''}">
       ${image}
       <div class="folder-item-main">
         <div class="folder-item-top">
@@ -1145,76 +918,29 @@ function renderFolderItem(item) {
   `;
 }
 
-
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char]));
 }
 
-function applyUsageMode(mode) {
-  if (!USAGE_MODES[mode]) mode = 'print';
-  const preset = USAGE_MODES[mode];
-  state.settings.usageMode = mode;
-  state.settings.pageFormat = preset.pageFormat;
-  state.settings.showDigitalMenu = preset.showDigitalMenu;
-  state.settings.density = preset.density;
-  state.settings.pageUtilization = preset.pageUtilization;
-  state.settings.showDescriptions = preset.showDescriptions;
-  state.settings.showImages = preset.showImages;
-  state.settings.fontScale = preset.fontScale;
-  state.settings.imageScale = preset.imageScale;
-  state.settings.maxPages = 9;
-  activeSection = 'Todos';
-  searchTerm = '';
-  const search = $('#searchInput');
-  if (search) search.value = '';
-  setControlValues();
-  renderAll();
-  toast(`Modo ${preset.label} aplicado.`);
-}
-
-function simulatePageCount() {
-  const config = getCurrentConfig();
-  const maxPages = clampPages(state.settings.maxPages);
-  const sections = createPrintSections(state.items);
-  const result = paginateSections(sections, maxPages, config);
-  return { pages: result.pages.length, overflowCount: result.overflowCount };
-}
-
 function autoLayout() {
   const selectedFormat = state.settings.pageFormat;
-  orderItemsForPrint();
+  state.settings.density = 'compact';
+  state.settings.showImages = false;
+  state.settings.breakBySection = false;
+  state.settings.showDescriptions = !['feed-4x5', 'story-9x16'].includes(selectedFormat);
+  state.settings.fontScale = selectedFormat === 'folder-9-a4' ? 96 : 100;
+  if (selectedFormat === 'a5-portrait') state.settings.fontScale = 96;
+  if (selectedFormat === 'story-9x16') state.settings.fontScale = 92;
+  if (selectedFormat === 'feed-4x5') state.settings.fontScale = 96;
+  if (state.settings.showImages) state.settings.imageScale = selectedFormat === 'a4-landscape' ? 90 : 100;
+  setControlValues();
   activeSection = 'Todos';
   searchTerm = '';
-  const search = $('#searchInput');
-  if (search) search.value = '';
-
-  const attempts = [
-    { density: 'normal', pageUtilization: 'balanced', showDescriptions: true, fontScale: 104, imageScale: state.settings.showImages ? 115 : state.settings.imageScale },
-    { density: 'compact', pageUtilization: 'balanced', showDescriptions: true, fontScale: 100, imageScale: state.settings.showImages ? 100 : state.settings.imageScale },
-    { density: 'compact', pageUtilization: 'max', showDescriptions: true, fontScale: 100, imageScale: state.settings.showImages ? 90 : state.settings.imageScale },
-    { density: 'compact', pageUtilization: 'max', showDescriptions: false, fontScale: 96, imageScale: state.settings.showImages ? 80 : state.settings.imageScale },
-    { density: 'compact', pageUtilization: 'max', showDescriptions: false, fontScale: 92, showImages: false, imageScale: 75 }
-  ];
-
-  let chosen = attempts[attempts.length - 1];
-  let chosenResult = null;
-  const maxPages = clampPages(state.settings.maxPages || 9);
-  for (const attempt of attempts) {
-    Object.assign(state.settings, attempt, { pageFormat: selectedFormat });
-    chosenResult = simulatePageCount();
-    chosen = attempt;
-    if (chosenResult.pages <= maxPages && chosenResult.overflowCount === 0) break;
-  }
-
-  Object.assign(state.settings, chosen, { pageFormat: selectedFormat });
-  setControlValues();
+  $('#searchInput').value = '';
+  orderItemsForPrint();
   renderAll();
-  renderPreview({ precise: true });
-  const result = chosenResult || simulatePageCount();
-  const status = result.overflowCount ? `Ainda há ${result.overflowCount} item(ns) concentrados na última página.` : `Fechou em ${result.pages} página(s).`;
-  toast(`Organizador automático aplicado. ${status}`);
+  toast(`Layout reorganizado para ${getCurrentConfig().label}.`);
 }
-
 
 function zeroCategoryPrices() {
   const isAll = activeSection === 'Todos';
@@ -1248,7 +974,7 @@ function addItem() {
   state.items.unshift({
     id: `${Date.now()}-novo-item`,
     category: 'Cardápio', section, product: 'Novo item', option: '', volume: '', serve: '', availability: '',
-    price: '', priceValue: null, priceBlank: true, description: '', notes: '', image: '', highlight: false
+    price: '', priceValue: null, priceBlank: true, description: '', notes: '', image: ''
   });
   activeSection = section;
   renderAll();
@@ -1293,89 +1019,9 @@ function resetData() {
   renderAll();
 }
 
-
-async function exportPublicMenu() {
-  normalizeSettings();
-  const previous = {
-    activeSection,
-    searchTerm,
-    showDigitalMenu: state.settings.showDigitalMenu,
-    usageMode: state.settings.usageMode
-  };
-
-  activeSection = 'Todos';
-  searchTerm = '';
-  state.settings.showDigitalMenu = true;
-  state.settings.usageMode = 'digital';
-  renderPreview({ precise: true });
-
-  const area = $('#pdfArea');
-  const title = state.restaurant.name || 'Cardápio';
-  const cssText = await getInlineCssText();
-  const htmlContent = `<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${escapeHtml(title)} | Cardápio Digital</title>
-  <style>
-    ${cssText}
-    html { scroll-behavior: smooth; }
-    body { margin: 0; background: #101010; }
-    .no-print, .preview-toolbar, .app-header, .sidebar { display: none !important; }
-    .workspace { display: block !important; padding: 0 !important; }
-    .preview-shell { overflow: visible !important; min-height: 0 !important; }
-    .paper { margin: 0 auto !important; box-shadow: none !important; }
-    .menu-page { margin: 0 auto 22px !important; }
-    @media (max-width: 860px) {
-      .paper, .menu-page { width: 100vw !important; height: auto !important; min-height: 100vh !important; border-radius: 0 !important; }
-      .folder-grid { grid-template-columns: 1fr !important; }
-      .folder-header, .folder-header.first { grid-template-columns: 1fr !important; gap: 12px !important; }
-      .folder-side { justify-self: start !important; flex-wrap: wrap !important; }
-      .folder-contact { text-align: left !important; }
-    }
-  </style>
-</head>
-<body>
-  ${area.outerHTML}
-</body>
-</html>`;
-
-  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `cardapio-publico-${(title || 'restaurante').toLowerCase().replace(/\s+/g, '-')}.html`;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  activeSection = previous.activeSection;
-  searchTerm = previous.searchTerm;
-  state.settings.showDigitalMenu = previous.showDigitalMenu;
-  state.settings.usageMode = previous.usageMode;
-  renderAll();
-  toast('Cardápio público exportado em HTML.');
-}
-
-async function getInlineCssText() {
-  try {
-    const response = await fetch('style.css', { cache: 'no-store' });
-    if (response.ok) return await response.text();
-  } catch (error) {
-    console.warn('Não consegui carregar style.css para exportar público.', error);
-  }
-  return Array.from(document.styleSheets).map(sheet => {
-    try {
-      return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
-    } catch (error) {
-      return '';
-    }
-  }).join('\n');
-}
-
 async function generatePdf() {
   normalizeSettings();
-  renderPreview({ precise: true });
+  renderPreview();
   const area = $('#pdfArea');
   const pages = $$('.menu-page', area);
   const config = getCurrentConfig();
@@ -1455,7 +1101,6 @@ function renderAll() {
     $('#presetImport').addEventListener('change', event => { if (event.target.files?.[0]) importPreset(event.target.files[0]); event.target.value = ''; });
     $('#btnReset').addEventListener('click', resetData);
     $('#btnPdf').addEventListener('click', generatePdf);
-    $('#btnPublishDigital').addEventListener('click', exportPublicMenu);
     $('#jsonImport').addEventListener('change', event => { if (event.target.files?.[0]) importJson(event.target.files[0]); event.target.value = ''; });
     isBound = true;
   } else {
