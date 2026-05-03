@@ -16,6 +16,42 @@ const PRINT_SECTION_ORDER = [
   'Vinhos Casteluche', 'Coquetéis Casteluche', 'Promoções / Baldes', 'Águas', 'Refrigerantes', 'Energéticos', 'Sucos', 'Sucos Naturais'
 ];
 
+
+const WEEKLY_DAY_ORDER = [
+  'SEGUNDA',
+  'TERCA',
+  'TERÇA',
+  'QUARTA',
+  'QUINTA',
+  'SEXTA',
+  'SABADO E DOMINGO',
+  'SÁBADO E DOMINGO',
+  'SABADO',
+  'SÁBADO',
+  'DOMINGO'
+];
+
+function normalizeDayText(value = '') {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toUpperCase();
+}
+
+function weeklyDayRank(value = '') {
+  const text = normalizeDayText(value);
+  if (!text) return 999;
+  if (text.includes('SEGUNDA')) return 1;
+  if (text.includes('TERCA')) return 2;
+  if (text.includes('QUARTA')) return 3;
+  if (text.includes('QUINTA')) return 4;
+  if (text.includes('SEXTA')) return 5;
+  if (text.includes('SABADO') && text.includes('DOMINGO')) return 6;
+  if (text.includes('SABADO')) return 6;
+  if (text.includes('DOMINGO')) return 7;
+  return 999;
+}
+
 const FORMAT_CONFIGS = {
   'folder-9-a4': {
     label: 'Pasta A4', css: 'format-folder-9-a4', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
@@ -413,6 +449,13 @@ function orderItemsForPrint() {
   state.items.sort((a, b) => {
     const sectionDiff = sectionRank(a.section) - sectionRank(b.section);
     if (sectionDiff !== 0) return sectionDiff;
+
+    if (state.menuType === 'semanal' && (a.section || '') === 'Cardápio Semanal' && (b.section || '') === 'Cardápio Semanal') {
+      const dayDiff = weeklyDayRank(a.availability) - weeklyDayRank(b.availability);
+      if (dayDiff !== 0) return dayDiff;
+      return String(a.id || '').localeCompare(String(b.id || ''), 'pt-BR', { numeric: true });
+    }
+
     return String(a.product || '').localeCompare(String(b.product || ''), 'pt-BR', { sensitivity: 'base' }) ||
       String(a.option || a.volume || '').localeCompare(String(b.option || b.volume || ''), 'pt-BR', { sensitivity: 'base' });
   });
@@ -658,8 +701,10 @@ function isReviewText(value) {
 
 function groupItemsForLayout(items) {
   const map = new Map();
-  items.forEach(item => {
-    const key = [item.product || 'Sem nome', item.description || '', item.notes || ''].join('::');
+  const shouldUseWeeklyOrder = state.menuType === 'semanal' && items.some(item => (item.section || '') === 'Cardápio Semanal');
+
+  items.forEach((item, index) => {
+    const key = [item.product || 'Sem nome', item.description || '', item.notes || '', item.availability || ''].join('::');
     if (!map.has(key)) {
       map.set(key, {
         id: item.id,
@@ -667,11 +712,16 @@ function groupItemsForLayout(items) {
         description: item.description || '',
         notes: item.notes || '',
         image: item.image || '',
+        availability: item.availability || '',
+        _order: index,
+        _dayRank: weeklyDayRank(item.availability || ''),
         variants: []
       });
     }
     const group = map.get(key);
     if (!group.image && item.image) group.image = item.image;
+    group._order = Math.min(group._order, index);
+    group._dayRank = Math.min(group._dayRank, weeklyDayRank(item.availability || ''));
     group.variants.push({
       label: buildVariantLabel(item),
       price: item.price || '',
@@ -679,7 +729,12 @@ function groupItemsForLayout(items) {
       review: item.priceBlank === true ? false : (!item.price || isReviewText(item.price))
     });
   });
-  return Array.from(map.values()).sort((a, b) => String(a.product).localeCompare(String(b.product), 'pt-BR', { sensitivity: 'base' }));
+
+  const groups = Array.from(map.values());
+  if (shouldUseWeeklyOrder) {
+    return groups.sort((a, b) => (a._dayRank - b._dayRank) || (a._order - b._order));
+  }
+  return groups.sort((a, b) => String(a.product).localeCompare(String(b.product), 'pt-BR', { sensitivity: 'base' }));
 }
 
 function createPrintSections(items) {
@@ -1381,7 +1436,8 @@ async function generateManualPdf(pages, config, filename) {
 
 
 function setupCollapsiblePanels() {
-  $$('.panel').forEach(panel => {
+  const panels = $$('.panel');
+  panels.forEach((panel, index) => {
     if (panel.dataset.collapsibleReady === 'true') return;
     const title = $('.panel-title', panel);
     if (!title) return;
@@ -1389,17 +1445,26 @@ function setupCollapsiblePanels() {
     button.type = 'button';
     button.className = 'panel-toggle';
     button.setAttribute('aria-label', 'Minimizar ou expandir painel');
-    button.textContent = '−';
     title.appendChild(button);
+
+    const setCollapsed = collapsed => {
+      panel.classList.toggle('is-collapsed', collapsed);
+      button.textContent = collapsed ? '+' : '−';
+      button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    };
+
     const toggle = event => {
       event.preventDefault();
       event.stopPropagation();
-      panel.classList.toggle('is-collapsed');
-      button.textContent = panel.classList.contains('is-collapsed') ? '+' : '−';
+      setCollapsed(!panel.classList.contains('is-collapsed'));
     };
+
     button.addEventListener('click', toggle);
     title.addEventListener('dblclick', toggle);
     panel.dataset.collapsibleReady = 'true';
+
+    // Por padrão, deixa apenas o primeiro painel aberto para reduzir poluição visual.
+    setCollapsed(index > 0);
   });
 }
 
