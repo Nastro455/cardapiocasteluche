@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v7-presets-completos';
-const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v7';
+const STORAGE_KEY = 'casteluche-menu-generator-v8-menu-digital-imagens';
+const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v8';
 const MAX_PAGES = 9;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
@@ -56,16 +56,16 @@ const PALETTES = {
 
 const WATERMARKS = {
   none: { label: 'Sem marca d\'água', svg: '' },
-  sanfona: { label: 'Sanfona', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"><rect x="80" y="100" width="150" height="120" rx="18"/><rect x="570" y="100" width="150" height="120" rx="18"/><path d="M230 115 570 205M230 140 570 230M230 165 570 255M230 190 570 280"/></g></svg>` },
-  mandacaru: { label: 'Mandacaru', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.5"><path d="M400 920V360"/><path d="M400 600c-70 0-92-60-92-132"/><path d="M400 700c82 0 112-66 112-150"/><path d="M400 770c-58 0-74 54-74 96"/><path d="M400 845c46 0 66-38 66-78"/></g></svg>` },
-  chapeu: { label: 'Chapéu de couro', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"><path d="M180 520c70-120 370-120 440 0"/><path d="M280 520c0-100 240-100 240 0"/><path d="M220 520c0 76 70 138 180 138s180-62 180-138"/></g></svg>` },
-  zabumba: { label: 'Zabumba', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.52"><circle cx="400" cy="540" r="185"/><circle cx="400" cy="540" r="145"/><path d="M190 350 120 250"/><path d="M610 730 680 830"/></g></svg>` },
-  sol: { label: 'Sol do sertão', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.5"><circle cx="400" cy="420" r="120"/><path d="M400 210v-90M400 720v-90M190 420h-90M700 420h-90M250 270l-70-70M550 570l70 70M550 270l70-70M250 570l-70 70"/></g></svg>` },
-  pimenta: { label: 'Pimenta', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.52"><path d="M430 320c22-42 68-66 110-56"/><path d="M420 350c180 10 170 305 0 375-190-55-160-345 0-375Z"/></g></svg>` },
-  fita: { label: 'Fita junina', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"><path d="M130 180c130 0 130 120 260 120s130-120 260-120"/><path d="M130 340c130 0 130 120 260 120s130-120 260-120"/><path d="M130 500c130 0 130 120 260 120s130-120 260-120"/></g></svg>` },
-  casal: { label: 'Casal dançando', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"><circle cx="320" cy="360" r="36"/><circle cx="470" cy="350" r="36"/><path d="M320 396v180l-95 110"/><path d="M320 450 430 490 520 650"/><path d="M470 386v170l95 110"/><path d="M470 450 390 520 280 650"/></g></svg>` },
-  bandeirolas: { label: 'Bandeirolas', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"><path d="M70 160c140 0 180 60 330 60s190-60 330-60"/><path d="M120 162v70l50-28 50 28v-70M310 192v70l50-28 50 28v-70M500 192v70l50-28 50 28v-70"/></g></svg>` },
-  xilogravura: { label: 'Xilogravura', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.46"><path d="M210 790c130-320 250-320 380 0"/><path d="M250 720c120-220 180-220 300 0"/><path d="M260 260c40-40 90-60 140-60 110 0 190 80 190 190 0 68-30 110-84 164"/><path d="M400 230v224"/></g></svg>` }
+  sanfona: { label: 'Sanfona', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M150 930c70-110 160-180 300-180s230 70 300 180"/><rect x="170" y="420" width="120" height="180" rx="18"/><rect x="610" y="420" width="120" height="180" rx="18"/><path d="M290 445 610 575M290 480 610 610M290 515 610 645M290 550 610 680"/><path d="M220 505h20M220 535h20M680 505h20M680 535h20"/><path d="M350 790c30-18 55-22 95-22 45 0 75 6 105 24"/></g></svg>` },
+  mandacaru: { label: 'Mandacaru', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><circle cx="640" cy="250" r="95"/><path d="M640 95v-45M640 455v-45M485 250h-45M795 250h-45M530 140l-32-32M750 360l32 32M750 140l32-32M530 360l-32 32"/><path d="M450 1000V390"/><path d="M450 610c-96 0-126-74-126-172"/><path d="M450 720c118 0 160-92 160-212"/><path d="M450 805c-76 0-100 68-100 120"/><path d="M450 900c66 0 92-50 92-110"/><path d="M280 1000h360"/></g></svg>` },
+  chapeu: { label: 'Chapéu de couro', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M150 620c120-150 480-150 600 0"/><path d="M270 620c0-130 360-130 360 0"/><path d="M210 620c0 110 95 195 240 195s240-85 240-195"/><path d="M310 625c65 28 160 38 280 0"/><path d="M210 865c80-20 160-30 240-30s160 10 240 30"/></g></svg>` },
+  zabumba: { label: 'Zabumba', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><circle cx="450" cy="620" r="235"/><circle cx="450" cy="620" r="185"/><path d="M270 470 150 300"/><path d="M630 770 750 940"/><path d="M290 795c48 20 102 30 160 30 66 0 126-12 182-38"/><path d="M286 456c44-18 102-31 164-31 67 0 131 12 188 36"/></g></svg>` },
+  sol: { label: 'Sol do sertão', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><circle cx="450" cy="340" r="140"/><path d="M450 130V60M450 620v-70M170 340h-70M800 340h-70M250 140l-48-48M650 540l48 48M650 140l48-48M250 540l-48 48"/><path d="M150 840c120-90 210-130 300-130 84 0 172 36 300 130"/><path d="M210 940c85-38 160-54 240-54s155 14 240 54"/><path d="M330 810c28-10 78-18 120-18 48 0 95 8 125 18"/></g></svg>` },
+  pimenta: { label: 'Pimenta', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M512 292c30-70 92-104 150-90"/><path d="M478 350c192 12 190 392-28 468-234-70-194-392 28-468Z"/><path d="M406 768c54 36 113 48 160 34"/><path d="M350 865c68 28 150 34 218 16"/></g></svg>` },
+  fita: { label: 'Fita junina', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M80 180c140 0 170 90 370 90s230-90 370-90"/><path d="M80 350c140 0 170 90 370 90s230-90 370-90"/><path d="M80 520c140 0 170 90 370 90s230-90 370-90"/><path d="M150 180v88l56-34 56 34v-88M372 214v88l56-34 56 34v-88M594 180v88l56-34 56 34v-88"/></g></svg>` },
+  casal: { label: 'Casal dançando', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><circle cx="340" cy="360" r="38"/><circle cx="540" cy="342" r="38"/><path d="M340 398v230l-110 130"/><path d="M340 458 455 510 575 705"/><path d="M540 380v212l110 140"/><path d="M540 445 448 560 316 735"/><path d="M224 890c66-22 142-34 226-34 82 0 160 12 226 34"/></g></svg>` },
+  bandeirolas: { label: 'Bandeirolas', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M60 150c130 0 170 70 390 70s260-70 390-70"/><path d="M110 150v105l54-36 54 36V150M290 180v105l54-36 54 36V180M470 150v105l54-36 54 36V150M650 180v105l54-36 54 36V180"/><path d="M60 980c130 0 170-70 390-70s260 70 390 70"/><path d="M110 980v-105l54 36 54-36v105M290 950v-105l54 36 54-36v105M470 980v-105l54 36 54-36v105M650 950v-105l54 36 54-36v105"/></g></svg>` },
+  xilogravura: { label: 'Xilogravura', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200"><g fill="none" stroke="%238a6747" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"><path d="M330 735c-25-120 20-214 118-214 102 0 162 112 128 222"/><path d="M406 530c0-66 30-108 86-132"/><path d="M390 760c42 20 92 24 146 10"/><path d="M352 850c60 26 142 34 212 20"/><path d="M258 914c60-34 126-52 192-52 68 0 136 16 194 50"/><path d="M300 320c30-30 64-46 102-46 40 0 80 16 116 48"/><path d="M348 272l-28-48M548 274l28-48"/></g></svg>` }
 };
 
 const FONT_SCALE_OPTIONS = [92, 96, 100, 104, 108];
@@ -89,6 +89,8 @@ function normalizeSettings() {
     headerBrandMode: 'text',
     showQrCode: false,
     logoScale: 100,
+    imageScale: 100,
+    showDigitalMenu: false,
     watermark: 'none',
     fontScale: 100,
     ...(state.settings || {})
@@ -101,6 +103,8 @@ function normalizeSettings() {
   state.settings.maxPages = clampPages(state.settings.maxPages);
   state.settings.fontScale = clampFontScale(state.settings.fontScale);
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
+  state.settings.imageScale = clampImageScale(state.settings.imageScale);
+  state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
   state.items = Array.isArray(state.items) ? state.items : [];
 }
 
@@ -120,6 +124,12 @@ function clampLogoScale(value) {
   const parsed = Number(value || 100);
   if (Number.isNaN(parsed)) return 100;
   return Math.max(60, Math.min(170, Math.round(parsed)));
+}
+
+function clampImageScale(value) {
+  const parsed = Number(value || 100);
+  if (Number.isNaN(parsed)) return 100;
+  return Math.max(60, Math.min(160, Math.round(parsed)));
 }
 
 function getCurrentConfig() {
@@ -364,6 +374,7 @@ function setControlValues() {
     watermarkSelect: state.settings.watermark,
     fontScale: state.settings.fontScale,
     logoScale: state.settings.logoScale,
+    imageScale: state.settings.imageScale,
     maxPages: state.settings.maxPages,
     headerBrandMode: state.settings.headerBrandMode
   };
@@ -374,11 +385,14 @@ function setControlValues() {
   $('#showDescriptions').checked = state.settings.showDescriptions !== false;
   $('#showImages').checked = state.settings.showImages === true;
   $('#breakBySection').checked = state.settings.breakBySection === true;
+  $('#showDigitalMenu').checked = state.settings.showDigitalMenu === true;
   $('#showQrCode').checked = state.settings.showQrCode === true;
   const fontScaleLabel = $('#fontScaleLabel');
   if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
   const logoScaleLabel = $('#logoScaleLabel');
   if (logoScaleLabel) logoScaleLabel.textContent = `${state.settings.logoScale}%`;
+  const imageScaleLabel = $('#imageScaleLabel');
+  if (imageScaleLabel) imageScaleLabel.textContent = `${state.settings.imageScale}%`;
 }
 
 function bindSettings() {
@@ -469,6 +483,12 @@ function bindSettings() {
     $('#logoScaleLabel').textContent = `${state.settings.logoScale}%`;
     renderPreview();
   });
+  $('#imageScale').addEventListener('input', event => {
+    state.settings.imageScale = clampImageScale(event.target.value);
+    event.target.value = state.settings.imageScale;
+    $('#imageScaleLabel').textContent = `${state.settings.imageScale}%`;
+    renderPreview();
+  });
   $('#maxPages').addEventListener('input', event => {
     state.settings.maxPages = clampPages(event.target.value);
     event.target.value = state.settings.maxPages;
@@ -480,6 +500,10 @@ function bindSettings() {
   });
   $('#showImages').addEventListener('change', event => {
     state.settings.showImages = event.target.checked;
+    renderPreview();
+  });
+  $('#showDigitalMenu').addEventListener('change', event => {
+    state.settings.showDigitalMenu = event.target.checked;
     renderPreview();
   });
   $('#breakBySection').addEventListener('change', event => {
@@ -610,7 +634,9 @@ function itemWeight(item) {
     if (descLength > 100) weight += 0.22;
     if (descLength > 180) weight += 0.20;
   }
-  if (state.settings.showImages && item.image) weight += 0.36;
+  if (state.settings.showImages && item.image) {
+    weight += 0.28 + ((state.settings.imageScale - 100) / 100) * 0.9;
+  }
   const fontImpact = (state.settings.fontScale - 100) / 100;
   weight += fontImpact * 1.4;
   return Math.max(0.6, weight);
@@ -622,6 +648,7 @@ function pageCapacity(pageIndex, config) {
   if (state.settings.headerBrandMode === 'logo' && state.restaurant.logo) capacity -= 0.5;
   if (state.settings.showQrCode && state.restaurant.qrImage) capacity -= 0.8;
   if (pageIndex === 0 && state.restaurant.tagline) capacity -= 0.4;
+  if (pageIndex === 0 && state.settings.showDigitalMenu) capacity -= 3.2;
   const fontImpact = (state.settings.fontScale - 100) / 4; // 104 => -1 capacity approximately
   capacity -= fontImpact;
   return Math.max(4.4, capacity);
@@ -704,6 +731,7 @@ function applyPaperVariables(paper) {
   paper.style.setProperty('--folder-columns', config.columns);
   paper.style.setProperty('--font-scale', `${state.settings.fontScale / 100}`);
   paper.style.setProperty('--logo-scale', `${state.settings.logoScale / 100}`);
+  paper.style.setProperty('--image-scale', `${state.settings.imageScale / 100}`);
   paper.style.setProperty('--paper-bg', palette.paper);
   paper.style.setProperty('--ink', palette.ink);
   paper.style.setProperty('--muted', palette.muted);
@@ -728,8 +756,9 @@ function renderPreview() {
   const sections = createPrintSections(filteredItems());
   const result = paginateSections(sections, maxPages, config);
   const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
+  const menuSections = sections.map(section => section.name);
 
-  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config)).join('');
+  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config, menuSections)).join('');
   const pageInfo = $('#pageInfo');
   if (pageInfo) {
     const overflow = result.overflowCount > 0 ? ` · ${result.overflowCount} item(ns) concentrados na última página` : '';
@@ -737,15 +766,16 @@ function renderPreview() {
   }
 }
 
-function renderMenuPage(page, pageNumber, totalPages, overflowCount, config) {
+function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, menuSections) {
   const overflowWarning = overflowCount > 0 && pageNumber === totalPages
     ? `<div class="folder-warning">Há conteúdo demais na última página. Tente reduzir descrições, diminuir a fonte, trocar para densidade compacta ou organizar o layout novamente.</div>`
     : '';
   return `
-    <article class="menu-page" data-page="${pageNumber}">
+    <article class="menu-page" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
       ${renderWatermark()}
       ${renderPageHeader(pageNumber, totalPages)}
       <main class="folder-body">
+        ${state.settings.showDigitalMenu && pageNumber === 1 ? renderDigitalMenu(menuSections) : ''}
         ${overflowWarning}
         ${page.sections.length ? page.sections.map(renderFolderSection).join('') : '<div class="empty-page">Espaço reservado para novos itens.</div>'}
       </main>
@@ -765,6 +795,7 @@ function renderWatermark() {
 
 function renderPageHeader(pageNumber, totalPages) {
   const isFirst = pageNumber === 1;
+  const backButton = state.settings.showDigitalMenu && !isFirst ? '<a class="back-to-menu" href="#menu-root">↑ Menu</a>' : '';
   return `
     <header class="folder-header ${isFirst ? 'first' : ''}${state.settings.showQrCode && state.restaurant.qrImage ? ' has-qr' : ''}">
       <div class="folder-brand-wrap">
@@ -772,6 +803,7 @@ function renderPageHeader(pageNumber, totalPages) {
         ${isFirst && state.restaurant.tagline ? `<p class="folder-tagline">${escapeHtml(state.restaurant.tagline)}</p>` : ''}
       </div>
       <div class="folder-side">
+        ${backButton}
         ${renderHeaderQr()}
         <div class="folder-contact">
           <span>${escapeHtml(state.restaurant.whatsapp || '')}</span>
@@ -808,10 +840,36 @@ function renderHeaderQr() {
   `;
 }
 
+function slugify(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'secao';
+}
+
+function renderDigitalMenu(sectionNames = []) {
+  const uniqueSections = [...new Set(sectionNames)].filter(Boolean);
+  if (!uniqueSections.length) return '';
+  return `
+    <nav class="digital-menu" aria-label="Menu de categorias">
+      <div class="digital-menu-title">
+        <span>Menu rápido</span>
+        <strong>Toque em uma categoria</strong>
+      </div>
+      <div class="digital-menu-buttons">
+        ${uniqueSections.map(name => `<a href="#cat-${slugify(name)}">${escapeHtml(name)}</a>`).join('')}
+      </div>
+    </nav>
+  `;
+}
+
 function renderFolderSection(section) {
   const title = section.continuation ? `${section.name} — continuação` : section.name;
+  const idAttr = !section.continuation ? ` id="cat-${slugify(section.name)}"` : '';
   return `
-    <section class="folder-section">
+    <section class="folder-section"${idAttr}>
       <h3>${escapeHtml(title)}</h3>
       <div class="folder-grid">
         ${section.items.map(renderFolderItem).join('')}
@@ -874,6 +932,7 @@ function autoLayout() {
   if (selectedFormat === 'a5-portrait') state.settings.fontScale = 96;
   if (selectedFormat === 'story-9x16') state.settings.fontScale = 92;
   if (selectedFormat === 'feed-4x5') state.settings.fontScale = 96;
+  if (state.settings.showImages) state.settings.imageScale = selectedFormat === 'a4-landscape' ? 90 : 100;
   setControlValues();
   activeSection = 'Todos';
   searchTerm = '';

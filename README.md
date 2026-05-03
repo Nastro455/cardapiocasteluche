@@ -82,3 +82,12 @@ Essa versão salva alterações no próprio navegador. Para transformar em uma p
 A exportação de PDF agora renderiza cada página individualmente antes de montar o arquivo. Isso evita o problema de páginas brancas extras que acontecia quando um cardápio de 9 páginas virava um PDF com muitas páginas vazias.
 
 O botão de organização não força mais apenas o modelo Pasta A4: ele respeita o formato selecionado, seja A4 vertical, A4 horizontal, A5, Feed ou Stories.
+
+## Atualização V8
+
+Esta versão adiciona:
+
+- controle de escala das imagens dos itens, respeitando a paginação do layout;
+- opção de menu digital com botões de acesso rápido às categorias;
+- botão de voltar ao menu nas páginas internas;
+- presets continuam salvando configurações, imagens, QR Code, logo, escala do logo, escala das imagens e menu digital.

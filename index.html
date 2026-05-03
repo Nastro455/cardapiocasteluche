@@ -137,8 +137,15 @@
         <div class="checks">
           <label><input id="showDescriptions" type="checkbox" /> Mostrar descrições</label>
           <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
+          <label><input id="showDigitalMenu" type="checkbox" /> Adicionar menu digital com atalhos</label>
           <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
+        <label>Escala das imagens dos itens
+          <div class="range-stack">
+            <input id="imageScale" type="range" min="60" max="160" step="5" value="100" />
+            <span id="imageScaleLabel" class="range-value">100%</span>
+          </div>
+        </label>
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
@@ -164,7 +171,7 @@
           <input id="presetImport" type="file" accept="application/json,.json,.casteluche-preset" hidden />
           <button class="btn danger" id="btnDeletePreset" type="button">Excluir preset</button>
         </div>
-        <p class="panel-note">O preset guarda tudo: formato, paleta, marca d'água, fonte, logo, QR Code, imagens dos produtos, preços e descrições. O arquivo exportado pode ser levado para outro computador.</p>
+        <p class="panel-note">O preset guarda tudo: formato, paleta, marca d'água, fonte, escala do logo, escala das imagens, menu digital, logo, QR Code, imagens dos produtos, preços e descrições. O arquivo exportado pode ser levado para outro computador.</p>
       </section>
 
       <section class="panel">
