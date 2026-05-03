@@ -31,6 +31,12 @@ button, input, select, textarea { font: inherit; }
 .btn.secondary { background: #e8dac0; color: #21160b; }
 .btn.warning { background: rgba(201,151,63,.18); color: #ffe8b2; border: 1px solid rgba(201,151,63,.42); }
 .btn.ghost { color: #fff; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); }
+.btn.gold {
+  color: #ffe8b2;
+  border-color: rgba(201,151,63,.48);
+  background: rgba(201,151,63,.12);
+}
+
 .btn.danger { background: rgba(194,59,34,.18); color: #ffd0c8; border: 1px solid rgba(194,59,34,.4); }
 .file-label { display: inline-block; }
 

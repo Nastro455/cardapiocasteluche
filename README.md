@@ -91,3 +91,18 @@ Esta versão adiciona:
 - opção de menu digital com botões de acesso rápido às categorias;
 - botão de voltar ao menu nas páginas internas;
 - presets continuam salvando configurações, imagens, QR Code, logo, escala do logo, escala das imagens e menu digital.
+
+
+## Atualização V9+
+
+Esta versão mantém a base visual da V9, que foi a mais estável para o layout de impressão, e adiciona o recurso de **Exportar cardápio público**.
+
+O botão gera um arquivo HTML independente para uso como cardápio digital em uma página pública do GitHub Pages. Esse arquivo sai sem painel administrativo, com menu rápido de categorias, botão de WhatsApp quando houver telefone cadastrado e opção de imprimir pelo navegador.
+
+Fluxo recomendado:
+
+1. Ajuste o cardápio normalmente no editor.
+2. Clique em **Salvar no navegador** para preservar a versão local.
+3. Clique em **Exportar cardápio público**.
+4. Suba o arquivo `.html` gerado para o repositório do GitHub Pages.
+5. Use esse arquivo como destino do QR Code do cardápio virtual.

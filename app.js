@@ -991,6 +991,240 @@ function exportJson() {
   URL.revokeObjectURL(url);
 }
 
+
+function makeFileSlug(value) {
+  return String(value || 'cardapio')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'cardapio';
+}
+
+function collectPublicExportCss() {
+  let css = '';
+  try {
+    Array.from(document.styleSheets).forEach(sheet => {
+      try {
+        Array.from(sheet.cssRules || []).forEach(rule => {
+          css += `${rule.cssText}\n`;
+        });
+      } catch (error) {
+        // Algumas folhas externas podem bloquear leitura por CORS. O link para style.css segue no HTML exportado.
+      }
+    });
+  } catch (error) {
+    console.warn('Não foi possível coletar todo o CSS da página.', error);
+  }
+
+  css += `
+    html { scroll-behavior: smooth; }
+    body.public-cardapio-body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0c0b0a;
+      color: #f6f0e5;
+      overflow-x: hidden;
+    }
+    .public-export-shell {
+      width: min(100%, 1180px);
+      margin: 0 auto;
+      padding: 24px 18px 48px;
+    }
+    .public-export-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 18px;
+      margin: 0 0 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 0 0 22px 22px;
+      background: rgba(10,10,10,.88);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 16px 50px rgba(0,0,0,.25);
+    }
+    .public-export-topbar strong {
+      display: block;
+      color: var(--gold, #c9973f);
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .public-export-topbar span {
+      display: block;
+      margin-top: 3px;
+      color: rgba(255,255,255,.68);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .public-export-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .public-export-actions a,
+    .public-export-actions button {
+      appearance: none;
+      border: 1px solid rgba(201,151,63,.45);
+      border-radius: 999px;
+      background: rgba(201,151,63,.13);
+      color: #ffe8b2;
+      padding: 10px 13px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .public-export-cardapio {
+      margin: 0 auto !important;
+    }
+    .public-cardapio-body .menu-page {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (max-width: 860px) {
+      .public-export-shell { padding: 12px 10px 36px; }
+      .public-export-topbar {
+        align-items: flex-start;
+        border-radius: 0 0 18px 18px;
+      }
+      .public-export-topbar strong { font-size: 20px; }
+      .public-export-actions { justify-content: flex-start; }
+      .public-cardapio-body .paper.menu-book {
+        width: 100% !important;
+        gap: 16px !important;
+      }
+      .public-cardapio-body .menu-page {
+        width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        border-radius: 18px !important;
+      }
+      .public-cardapio-body .folder-header {
+        grid-template-columns: 1fr !important;
+      }
+      .public-cardapio-body .folder-side {
+        justify-self: start !important;
+        align-items: flex-start !important;
+        flex-wrap: wrap;
+      }
+      .public-cardapio-body .folder-contact {
+        text-align: left !important;
+      }
+      .public-cardapio-body .folder-body {
+        overflow: visible !important;
+        padding: 14px 14px 10px !important;
+      }
+      .public-cardapio-body .folder-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .public-cardapio-body .folder-item-top {
+        grid-template-columns: 1fr auto !important;
+      }
+      .public-cardapio-body .digital-menu-buttons {
+        grid-template-columns: 1fr !important;
+      }
+    }
+    @media print {
+      .public-export-topbar { display: none !important; }
+      .public-export-shell { padding: 0 !important; }
+    }
+  `;
+
+  return css;
+}
+
+function buildPublicCardapioHtml(cardapioMarkup, css) {
+  const restaurantName = state.restaurant.name || 'Cardápio';
+  const contactLine = [state.restaurant.whatsapp, state.restaurant.instagram, state.restaurant.address].filter(Boolean).join(' · ');
+  const generatedAt = new Date().toLocaleString('pt-BR');
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(restaurantName)} | Cardápio Digital</title>
+  <meta name="description" content="Cardápio digital ${escapeHtml(restaurantName)}" />
+  <link rel="stylesheet" href="style.css" />
+  <style>${css}</style>
+</head>
+<body class="public-cardapio-body">
+  <header class="public-export-topbar">
+    <div>
+      <strong>${escapeHtml(restaurantName)}</strong>
+      <span>${escapeHtml(contactLine || 'Cardápio digital')}</span>
+    </div>
+    <nav class="public-export-actions" aria-label="Ações rápidas">
+      <a href="#menu-root">Menu</a>
+      ${state.restaurant.whatsapp ? `<a href="https://wa.me/${String(state.restaurant.whatsapp).replace(/\D/g, '')}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      <button type="button" onclick="window.print()">Imprimir</button>
+    </nav>
+  </header>
+  <main class="public-export-shell">
+    ${cardapioMarkup}
+  </main>
+  <script>
+    document.documentElement.dataset.generatedAt = ${JSON.stringify(generatedAt)};
+  </script>
+</body>
+</html>`;
+}
+
+function downloadTextFile(filename, content, mimeType = 'text/html;charset=utf-8') {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportPublicCardapio() {
+  normalizeSettings();
+  const previous = {
+    activeSection,
+    searchTerm,
+    showDigitalMenu: state.settings.showDigitalMenu
+  };
+
+  try {
+    activeSection = 'Todos';
+    searchTerm = '';
+    state.settings.showDigitalMenu = true;
+    renderPreview();
+
+    const paper = $('#pdfArea');
+    const clone = paper.cloneNode(true);
+    clone.id = 'cardapio-publico';
+    clone.classList.add('public-export-cardapio');
+
+    const css = collectPublicExportCss();
+    const html = buildPublicCardapioHtml(clone.outerHTML, css);
+    const filename = `${makeFileSlug(state.restaurant.name || 'cardapio')}-cardapio-publico.html`;
+    downloadTextFile(filename, html);
+    toast('Cardápio público exportado em HTML. Suba esse arquivo no GitHub Pages junto com o projeto.');
+  } catch (error) {
+    console.error(error);
+    alert('Não consegui exportar o cardápio público. Veja o console para detalhes.');
+  } finally {
+    activeSection = previous.activeSection;
+    searchTerm = previous.searchTerm;
+    state.settings.showDigitalMenu = previous.showDigitalMenu;
+    renderAll();
+  }
+}
+
 function importJson(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -1094,6 +1328,7 @@ function renderAll() {
     $('#btnZeroCategory').addEventListener('click', zeroCategoryPrices);
     $('#btnSave').addEventListener('click', saveData);
     $('#btnExport').addEventListener('click', exportJson);
+    $('#btnPublicHtml').addEventListener('click', exportPublicCardapio);
     $('#btnSavePreset').addEventListener('click', savePreset);
     $('#btnApplyPreset').addEventListener('click', applySavedPreset);
     $('#btnDeletePreset').addEventListener('click', deleteSavedPreset);
