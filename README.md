@@ -124,3 +124,10 @@ Esta versão mantém o **Cardápio Especial** original e adiciona um painel cham
 Ao trocar o tipo, a ferramenta carrega a base correspondente sem alterar a base especial original. Também foram adicionados painéis minimizáveis e a lateral de configuração acompanha a rolagem vertical da página em telas maiores.
 
 O botão **Exportar cardápio público** continua disponível para gerar um HTML separado do cardápio final, pronto para ser hospedado no GitHub Pages.
+
+## Atualização V15
+
+- Novos formatos de impressão **Frente e verso**.
+- Opções adicionadas: **A4 vertical — 2 páginas**, **A4 horizontal — 2 páginas** e **A3 horizontal — 2 páginas**.
+- Ao escolher um desses formatos, o campo de limite de páginas fica travado em 2, porque o objetivo é imprimir frente e verso.
+- O botão **Organizar layout selecionado** passa a compactar automaticamente o conteúdo para tentar caber nas duas páginas.

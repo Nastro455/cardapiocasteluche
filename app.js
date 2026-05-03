@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v13-tipos-cardapio';
-const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v13';
+const STORAGE_KEY = 'casteluche-menu-generator-v15-duplex';
+const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v15';
 const DEFAULT_MAX_PAGES = 9;
 const MAX_ALLOWED_PAGES = 99;
 let state = structuredClone(window.MENU_DATA || {});
@@ -56,6 +56,18 @@ const FORMAT_CONFIGS = {
   'folder-9-a4': {
     label: 'Pasta A4', css: 'format-folder-9-a4', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
     orientation: 'portrait', pdfFormat: 'a4', columns: 2, compactCapacity: 24, normalCapacity: 18
+  },
+  'duplex-a4-portrait': {
+    label: 'Frente e verso A4 vertical', css: 'format-duplex-a4-portrait', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
+    orientation: 'portrait', pdfFormat: 'a4', columns: 2, compactCapacity: 29, normalCapacity: 22, fixedMaxPages: 2, duplex: true
+  },
+  'duplex-a4-landscape': {
+    label: 'Frente e verso A4 horizontal', css: 'format-duplex-a4-landscape', widthPx: 1123, heightPx: 794, widthMm: 297, heightMm: 210,
+    orientation: 'landscape', pdfFormat: 'a4', columns: 3, compactCapacity: 27, normalCapacity: 20, fixedMaxPages: 2, duplex: true
+  },
+  'duplex-a3-landscape': {
+    label: 'Frente e verso A3 horizontal', css: 'format-duplex-a3-landscape', widthPx: 1587, heightPx: 1123, widthMm: 420, heightMm: 297,
+    orientation: 'landscape', pdfFormat: 'a3', columns: 4, compactCapacity: 44, normalCapacity: 34, fixedMaxPages: 2, duplex: true
   },
   'a4-portrait': {
     label: 'A4 vertical', css: 'format-a4-portrait', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
@@ -198,6 +210,8 @@ function normalizeSettings() {
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.settings.imageScale = clampImageScale(state.settings.imageScale);
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
+  const currentFormat = FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
+  if (currentFormat.fixedMaxPages) state.settings.maxPages = currentFormat.fixedMaxPages;
   state.items = Array.isArray(state.items) ? state.items : [];
   ensureMenuTypes();
 }
@@ -228,6 +242,26 @@ function clampImageScale(value) {
 
 function getCurrentConfig() {
   return FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
+}
+
+function getMaxPagesForCurrentFormat() {
+  const config = getCurrentConfig();
+  return config.fixedMaxPages ? config.fixedMaxPages : clampPages(state.settings.maxPages);
+}
+
+function updateMaxPagesControlState() {
+  const input = $('#maxPages');
+  if (!input) return;
+  const config = getCurrentConfig();
+  if (config.fixedMaxPages) {
+    input.value = config.fixedMaxPages;
+    input.disabled = true;
+    input.title = 'Este formato foi criado para frente e verso, então o limite fica travado em 2 páginas.';
+  } else {
+    input.disabled = false;
+    input.title = '';
+    input.value = clampPages(state.settings.maxPages);
+  }
 }
 
 function getPalette() {
@@ -495,6 +529,7 @@ function setControlValues() {
   if (logoScaleLabel) logoScaleLabel.textContent = `${state.settings.logoScale}%`;
   const imageScaleLabel = $('#imageScaleLabel');
   if (imageScaleLabel) imageScaleLabel.textContent = `${state.settings.imageScale}%`;
+  updateMaxPagesControlState();
 }
 
 function bindSettings() {
@@ -562,6 +597,9 @@ function bindSettings() {
 
   $('#pageFormat').addEventListener('change', event => {
     state.settings.pageFormat = event.target.value;
+    const config = getCurrentConfig();
+    if (config.fixedMaxPages) state.settings.maxPages = config.fixedMaxPages;
+    updateMaxPagesControlState();
     renderPreview();
   });
   $('#themeSelect').addEventListener('change', event => {
@@ -595,6 +633,12 @@ function bindSettings() {
     renderPreview();
   });
   $('#maxPages').addEventListener('input', event => {
+    const config = getCurrentConfig();
+    if (config.fixedMaxPages) {
+      state.settings.maxPages = config.fixedMaxPages;
+      event.target.value = config.fixedMaxPages;
+      return;
+    }
     state.settings.maxPages = clampPages(event.target.value);
     event.target.value = state.settings.maxPages;
     renderPreview();
@@ -869,7 +913,7 @@ function renderPreview() {
   const paper = $('#pdfArea');
   applyPaperVariables(paper);
   const config = getCurrentConfig();
-  const maxPages = clampPages(state.settings.maxPages);
+  const maxPages = getMaxPagesForCurrentFormat();
   const sections = createPrintSections(filteredItems());
   const result = paginateSections(sections, maxPages, config);
   const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
@@ -1041,11 +1085,14 @@ function escapeHtml(value) {
 
 function autoLayout() {
   const selectedFormat = state.settings.pageFormat;
+  const config = getCurrentConfig();
+  if (config.fixedMaxPages) state.settings.maxPages = config.fixedMaxPages;
   state.settings.density = 'compact';
   state.settings.showImages = false;
   state.settings.breakBySection = false;
   state.settings.showDescriptions = !['feed-4x5', 'story-9x16'].includes(selectedFormat);
   state.settings.fontScale = selectedFormat === 'folder-9-a4' ? 96 : 100;
+  if (config.fixedMaxPages) state.settings.fontScale = 92;
   if (selectedFormat === 'a5-portrait') state.settings.fontScale = 96;
   if (selectedFormat === 'story-9x16') state.settings.fontScale = 92;
   if (selectedFormat === 'feed-4x5') state.settings.fontScale = 96;

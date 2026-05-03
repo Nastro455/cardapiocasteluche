@@ -708,3 +708,23 @@ html { scroll-behavior: smooth; }
     max-height: none;
   }
 }
+
+/* V15 - formatos frente e verso */
+#maxPages:disabled {
+  opacity: .72;
+  cursor: not-allowed;
+  border-color: rgba(201,151,63,.45);
+  background: rgba(201,151,63,.12);
+}
+.format-duplex-a4-portrait .folder-body,
+.format-duplex-a4-landscape .folder-body,
+.format-duplex-a3-landscape .folder-body {
+  padding-bottom: 8px;
+}
+.format-duplex-a4-landscape .folder-section,
+.format-duplex-a3-landscape .folder-section {
+  margin-bottom: 7px;
+}
+.format-duplex-a3-landscape .folder-grid {
+  gap: 4px 16px;
+}

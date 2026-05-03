@@ -39,3 +39,10 @@
 ## Atualização — limite de páginas configurável
 
 O campo **Limite de páginas** não fica mais travado em 9. O padrão continua sendo 9 para o cardápio físico atual do Casteluche, mas o operador pode informar outro limite de páginas, de 1 a 99, caso a pasta física ou o uso digital mude no futuro.
+
+## Atualização V15
+
+- Novos formatos de impressão **Frente e verso**.
+- Opções adicionadas: **A4 vertical — 2 páginas**, **A4 horizontal — 2 páginas** e **A3 horizontal — 2 páginas**.
+- Ao escolher um desses formatos, o campo de limite de páginas fica travado em 2, porque o objetivo é imprimir frente e verso.
+- O botão **Organizar layout selecionado** passa a compactar automaticamente o conteúdo para tentar caber nas duas páginas.
