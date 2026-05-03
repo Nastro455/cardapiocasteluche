@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'casteluche-menu-generator-v8-menu-digital-imagens';
 const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v8';
-const MAX_PAGES = 9;
+const DEFAULT_MAX_PAGES = 9;
+const MAX_ALLOWED_PAGES = 99;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
@@ -85,7 +86,7 @@ function normalizeSettings() {
     showImages: false,
     showDescriptions: true,
     breakBySection: false,
-    maxPages: 9,
+    maxPages: DEFAULT_MAX_PAGES,
     headerBrandMode: 'text',
     showQrCode: false,
     logoScale: 100,
@@ -109,9 +110,9 @@ function normalizeSettings() {
 }
 
 function clampPages(value) {
-  const parsed = Number(value || MAX_PAGES);
-  if (Number.isNaN(parsed)) return MAX_PAGES;
-  return Math.max(1, Math.min(MAX_PAGES, Math.round(parsed)));
+  const parsed = Number(value || DEFAULT_MAX_PAGES);
+  if (Number.isNaN(parsed)) return DEFAULT_MAX_PAGES;
+  return Math.max(1, Math.min(MAX_ALLOWED_PAGES, Math.round(parsed)));
 }
 
 function clampFontScale(value) {

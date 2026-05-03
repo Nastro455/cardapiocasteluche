@@ -7,7 +7,7 @@ Repositório estático para criar, editar e gerar PDF de cardápios para impress
 - Base com os itens importados da planilha.
 - Editor de produtos, preços, categorias, descrições e observações.
 - Upload local de imagem por item.
-- Formato principal: **Pasta A4 — até 9 páginas**.
+- Formato principal: **Pasta A4 — limite configurável**.
 - Formatos livres: **A4 vertical**, **A4 horizontal**, **A5 vertical**, **Feed 4:5** e **Stories 9:16**.
 - Temas visuais: **Boteco premium**, **Clean claro** e **Escuro elegante**.
 - Botão **Gerar PDF** via navegador.
@@ -18,17 +18,17 @@ Repositório estático para criar, editar e gerar PDF de cardápios para impress
 - Botão **Salvar no navegador**, **Exportar JSON** e **Importar JSON**.
 - Pronto para hospedar no **GitHub Pages**.
 
-## Modo Pasta A4 — até 9 páginas
+## Modo Pasta A4 — limite configurável
 
 Esse modo foi criado para cardápio físico em pasta/plástico A4.
 
-- Limita a exportação a no máximo **9 páginas**.
+- Limita a exportação a a quantidade de páginas definida pelo usuário.
 - Usa layout compacto em duas colunas e agrupa variações do mesmo produto na mesma linha, como `Individual / Casal / Família` ou `P / M / G`.
 - Repete cabeçalho e rodapé em cada página.
 - Numera as páginas automaticamente.
 - Mantém o cardápio organizado para impressão.
 
-Se passar de 9 páginas, a ferramenta tenta concentrar o excesso na última página e mostra um aviso. Para melhorar o encaixe, reduza descrições longas, desative imagens ou separe o cardápio em PDFs por categoria.
+Se passar do limite informado, a ferramenta tenta concentrar o excesso na última página e mostra um aviso. Para melhorar o encaixe, reduza descrições longas, desative imagens ou separe o cardápio em PDFs por categoria.
 
 ## Como publicar no GitHub Pages
 
@@ -106,3 +106,8 @@ Fluxo recomendado:
 3. Clique em **Exportar cardápio público**.
 4. Suba o arquivo `.html` gerado para o repositório do GitHub Pages.
 5. Use esse arquivo como destino do QR Code do cardápio virtual.
+
+
+## Atualização — limite de páginas configurável
+
+O campo **Limite de páginas** não fica mais travado em 9. O padrão continua sendo 9 para o cardápio físico atual do Casteluche, mas o operador pode informar outro limite de páginas, de 1 a 99, caso a pasta física ou o uso digital mude no futuro.

@@ -33,4 +33,9 @@
 - Exportação de PDF página por página, para evitar páginas brancas.
 - Opção de cabeçalho com logo da casa ou texto do restaurante.
 - Opção de QR Code no cabeçalho para cardápio virtual.
-- Limite de páginas mantido em até 9 páginas.
+- Limite de páginas mantido em com limite configurável de páginas.
+
+
+## Atualização — limite de páginas configurável
+
+O campo **Limite de páginas** não fica mais travado em 9. O padrão continua sendo 9 para o cardápio físico atual do Casteluche, mas o operador pode informar outro limite de páginas, de 1 a 99, caso a pasta física ou o uso digital mude no futuro.
