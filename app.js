@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v4-layout-pdf-logo-qr';
-const MAX_FOLDER_PAGES = 9;
+const STORAGE_KEY = 'casteluche-menu-generator-v5-paletas-marca-dagua-fonte';
+const MAX_PAGES = 9;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
-let bound = false;
+let isBound = false;
 
 const PRINT_SECTION_ORDER = [
   'Feijoada', 'Pratos Principais', 'Pratos Nordestinos', 'Pratos Feitos', 'Adicionais',
@@ -16,7 +16,7 @@ const PRINT_SECTION_ORDER = [
 const FORMAT_CONFIGS = {
   'folder-9-a4': {
     label: 'Pasta A4', css: 'format-folder-9-a4', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
-    orientation: 'portrait', pdfFormat: 'a4', columns: 2, compactCapacity: 24, normalCapacity: 18, forceMaxPages: true
+    orientation: 'portrait', pdfFormat: 'a4', columns: 2, compactCapacity: 24, normalCapacity: 18
   },
   'a4-portrait': {
     label: 'A4 vertical', css: 'format-a4-portrait', widthPx: 794, heightPx: 1123, widthMm: 210, heightMm: 297,
@@ -24,7 +24,7 @@ const FORMAT_CONFIGS = {
   },
   'a4-landscape': {
     label: 'A4 horizontal', css: 'format-a4-landscape', widthPx: 1123, heightPx: 794, widthMm: 297, heightMm: 210,
-    orientation: 'landscape', pdfFormat: 'a4', columns: 3, compactCapacity: 18, normalCapacity: 14
+    orientation: 'landscape', pdfFormat: 'a4', columns: 3, compactCapacity: 19, normalCapacity: 14
   },
   'a5-portrait': {
     label: 'A5 vertical', css: 'format-a5-portrait', widthPx: 560, heightPx: 794, widthMm: 148, heightMm: 210,
@@ -40,6 +40,34 @@ const FORMAT_CONFIGS = {
   }
 };
 
+const PALETTES = {
+  boteco: { label: 'Boteco Ouro', paper: '#f1e5ca', ink: '#1b1916', muted: '#6a5843', gold: '#c28b35', goldSoft: '#ead5a6', line: 'rgba(64,45,24,.18)', headStart: '#111111', headEnd: '#2a1d10', pageGlow1: 'rgba(255,255,255,.42)', pageGlow2: 'rgba(201,151,63,.18)', noteBg: '#ead5a6', bodyBg: '#0d0d0d', bodyGlow: '#333333' },
+  barro: { label: 'Barro Quente', paper: '#f4e4d4', ink: '#25150f', muted: '#7c5546', gold: '#c56b45', goldSoft: '#f0cdb4', line: 'rgba(88,44,28,.18)', headStart: '#2e120d', headEnd: '#6b2f1d', pageGlow1: 'rgba(255,255,255,.40)', pageGlow2: 'rgba(197,107,69,.18)', noteBg: '#f0cdb4', bodyBg: '#120b08', bodyGlow: '#4b1d14' },
+  caju: { label: 'Caju & Sol', paper: '#f7e7cf', ink: '#2b1a0f', muted: '#7b603b', gold: '#d28a2e', goldSoft: '#f7ddb1', line: 'rgba(102,73,26,.16)', headStart: '#4a2208', headEnd: '#9b4d11', pageGlow1: 'rgba(255,255,255,.38)', pageGlow2: 'rgba(210,138,46,.18)', noteBg: '#f7ddb1', bodyBg: '#120d09', bodyGlow: '#6b3510' },
+  mandacaru: { label: 'Mandacaru', paper: '#eef0dc', ink: '#1e2417', muted: '#60684d', gold: '#9e9a3f', goldSoft: '#dfe4b2', line: 'rgba(57,69,38,.16)', headStart: '#1e2918', headEnd: '#4d5f2a', pageGlow1: 'rgba(255,255,255,.36)', pageGlow2: 'rgba(158,154,63,.18)', noteBg: '#dfe4b2', bodyBg: '#10140c', bodyGlow: '#32451f' },
+  coqueiro: { label: 'Coqueiro Marrom', paper: '#efe6d8', ink: '#1f1a15', muted: '#6f6255', gold: '#b47b46', goldSoft: '#e8cfb4', line: 'rgba(71,52,34,.15)', headStart: '#302015', headEnd: '#6a4526', pageGlow1: 'rgba(255,255,255,.40)', pageGlow2: 'rgba(180,123,70,.16)', noteBg: '#e8cfb4', bodyBg: '#0f0e0d', bodyGlow: '#3c2919' },
+  areia: { label: 'Areia Clara', paper: '#fbf5e8', ink: '#23201b', muted: '#7b7165', gold: '#c9a46b', goldSoft: '#f2e2c2', line: 'rgba(99,84,60,.15)', headStart: '#57472d', headEnd: '#8d7250', pageGlow1: 'rgba(255,255,255,.42)', pageGlow2: 'rgba(201,164,107,.15)', noteBg: '#f2e2c2', bodyBg: '#11100f', bodyGlow: '#6c5631' },
+  forro: { label: 'Forró Vinho', paper: '#f3e0dd', ink: '#251617', muted: '#7a5659', gold: '#b6646d', goldSoft: '#efc3ca', line: 'rgba(86,46,50,.15)', headStart: '#36161a', headEnd: '#6b2a38', pageGlow1: 'rgba(255,255,255,.40)', pageGlow2: 'rgba(182,100,109,.16)', noteBg: '#efc3ca', bodyBg: '#130d0e', bodyGlow: '#50212b' },
+  lampiao: { label: 'Lampião Cobre', paper: '#f4e1d2', ink: '#2a1810', muted: '#775444', gold: '#bf7047', goldSoft: '#edc8b3', line: 'rgba(92,52,32,.16)', headStart: '#35160f', headEnd: '#6c2f1d', pageGlow1: 'rgba(255,255,255,.40)', pageGlow2: 'rgba(191,112,71,.16)', noteBg: '#edc8b3', bodyBg: '#120c0a', bodyGlow: '#522212' },
+  sertao: { label: 'Sertão Azul', paper: '#e5ecf0', ink: '#162028', muted: '#51626f', gold: '#547f96', goldSoft: '#c7d8e2', line: 'rgba(39,61,76,.15)', headStart: '#0f1b24', headEnd: '#2c495c', pageGlow1: 'rgba(255,255,255,.42)', pageGlow2: 'rgba(84,127,150,.15)', noteBg: '#c7d8e2', bodyBg: '#0c1013', bodyGlow: '#213442' },
+  noite: { label: 'Noite Premium', paper: '#191714', ink: '#f7ecdf', muted: '#d8c1a3', gold: '#d7a24a', goldSoft: '#322a1d', line: 'rgba(255,255,255,.11)', headStart: '#080808', headEnd: '#20160d', pageGlow1: 'rgba(255,255,255,.08)', pageGlow2: 'rgba(215,162,74,.12)', noteBg: '#322a1d', bodyBg: '#080808', bodyGlow: '#302112' }
+};
+
+const WATERMARKS = {
+  none: { label: 'Sem marca d\'água', svg: '' },
+  sanfona: { label: 'Sanfona', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"><rect x="80" y="100" width="150" height="120" rx="18"/><rect x="570" y="100" width="150" height="120" rx="18"/><path d="M230 115 570 205M230 140 570 230M230 165 570 255M230 190 570 280"/></g></svg>` },
+  mandacaru: { label: 'Mandacaru', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.5"><path d="M400 920V360"/><path d="M400 600c-70 0-92-60-92-132"/><path d="M400 700c82 0 112-66 112-150"/><path d="M400 770c-58 0-74 54-74 96"/><path d="M400 845c46 0 66-38 66-78"/></g></svg>` },
+  chapeu: { label: 'Chapéu de couro', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"><path d="M180 520c70-120 370-120 440 0"/><path d="M280 520c0-100 240-100 240 0"/><path d="M220 520c0 76 70 138 180 138s180-62 180-138"/></g></svg>` },
+  zabumba: { label: 'Zabumba', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.52"><circle cx="400" cy="540" r="185"/><circle cx="400" cy="540" r="145"/><path d="M190 350 120 250"/><path d="M610 730 680 830"/></g></svg>` },
+  sol: { label: 'Sol do sertão', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.5"><circle cx="400" cy="420" r="120"/><path d="M400 210v-90M400 720v-90M190 420h-90M700 420h-90M250 270l-70-70M550 570l70 70M550 270l70-70M250 570l-70 70"/></g></svg>` },
+  pimenta: { label: 'Pimenta', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.52"><path d="M430 320c22-42 68-66 110-56"/><path d="M420 350c180 10 170 305 0 375-190-55-160-345 0-375Z"/></g></svg>` },
+  fita: { label: 'Fita junina', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"><path d="M130 180c130 0 130 120 260 120s130-120 260-120"/><path d="M130 340c130 0 130 120 260 120s130-120 260-120"/><path d="M130 500c130 0 130 120 260 120s130-120 260-120"/></g></svg>` },
+  casal: { label: 'Casal dançando', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"><circle cx="320" cy="360" r="36"/><circle cx="470" cy="350" r="36"/><path d="M320 396v180l-95 110"/><path d="M320 450 430 490 520 650"/><path d="M470 386v170l95 110"/><path d="M470 450 390 520 280 650"/></g></svg>` },
+  bandeirolas: { label: 'Bandeirolas', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.48"><path d="M70 160c140 0 180 60 330 60s190-60 330-60"/><path d="M120 162v70l50-28 50 28v-70M310 192v70l50-28 50 28v-70M500 192v70l50-28 50 28v-70"/></g></svg>` },
+  xilogravura: { label: 'Xilogravura', svg: `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1100" viewBox="0 0 800 1100"><g fill="none" stroke="%23ad8a5a" stroke-width="8" stroke-linecap="round" opacity="0.46"><path d="M210 790c130-320 250-320 380 0"/><path d="M250 720c120-220 180-220 300 0"/><path d="M260 260c40-40 90-60 140-60 110 0 190 80 190 190 0 68-30 110-84 164"/><path d="M400 230v224"/></g></svg>` }
+};
+
+const FONT_SCALE_OPTIONS = [92, 96, 100, 104, 108];
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -59,23 +87,43 @@ function normalizeSettings() {
     maxPages: 9,
     headerBrandMode: 'text',
     showQrCode: false,
+    watermark: 'none',
+    fontScale: 100,
     ...(state.settings || {})
   };
-  state.settings.maxPages = clampPages(state.settings.maxPages);
   if (!FORMAT_CONFIGS[state.settings.pageFormat]) state.settings.pageFormat = 'folder-9-a4';
+  if (!PALETTES[state.settings.theme]) state.settings.theme = 'boteco';
+  if (!WATERMARKS[state.settings.watermark]) state.settings.watermark = 'none';
   if (!['compact', 'normal'].includes(state.settings.density)) state.settings.density = 'compact';
   if (!['text', 'logo'].includes(state.settings.headerBrandMode)) state.settings.headerBrandMode = 'text';
+  state.settings.maxPages = clampPages(state.settings.maxPages);
+  state.settings.fontScale = clampFontScale(state.settings.fontScale);
   state.items = Array.isArray(state.items) ? state.items : [];
 }
 
 function clampPages(value) {
-  const parsed = Number(value || MAX_FOLDER_PAGES);
-  if (Number.isNaN(parsed)) return MAX_FOLDER_PAGES;
-  return Math.max(1, Math.min(MAX_FOLDER_PAGES, Math.round(parsed)));
+  const parsed = Number(value || MAX_PAGES);
+  if (Number.isNaN(parsed)) return MAX_PAGES;
+  return Math.max(1, Math.min(MAX_PAGES, Math.round(parsed)));
+}
+
+function clampFontScale(value) {
+  const parsed = Number(value || 100);
+  const nearest = FONT_SCALE_OPTIONS.reduce((prev, current) => Math.abs(current - parsed) < Math.abs(prev - parsed) ? current : prev, 100);
+  return nearest;
 }
 
 function getCurrentConfig() {
   return FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
+}
+
+function getPalette() {
+  return PALETTES[state.settings.theme] || PALETTES.boteco;
+}
+
+function getWatermarkDataUrl() {
+  const entry = WATERMARKS[state.settings.watermark] || WATERMARKS.none;
+  return entry.svg ? `url("data:image/svg+xml;utf8,${entry.svg}")` : 'none';
 }
 
 function loadSavedData() {
@@ -102,15 +150,26 @@ function toast(message) {
   el.textContent = message;
   Object.assign(el.style, {
     position: 'fixed', right: '20px', bottom: '20px', padding: '14px 18px', borderRadius: '999px',
-    background: '#c9973f', color: '#1b1207', fontWeight: '900', zIndex: 9999,
-    boxShadow: '0 18px 50px rgba(0,0,0,.32)'
+    background: '#c9973f', color: '#1b1207', fontWeight: '900', zIndex: 9999, boxShadow: '0 18px 50px rgba(0,0,0,.32)'
   });
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2800);
 }
 
+function readImageFile(file, callback) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => callback(reader.result);
+  reader.readAsDataURL(file);
+}
+
 function onlyFilled(values) {
   return values.map(value => String(value || '').trim()).filter(Boolean).join(' · ');
+}
+
+function sectionRank(sectionName) {
+  const index = PRINT_SECTION_ORDER.indexOf(sectionName || 'Sem seção');
+  return index === -1 ? 999 : index;
 }
 
 function getSections() {
@@ -123,22 +182,17 @@ function getSections() {
       sections.push(name);
     }
   });
-  return sections;
+  return sections.sort((a, b) => sectionRank(a) - sectionRank(b) || a.localeCompare(b, 'pt-BR'));
 }
 
 function filteredItems() {
   const term = searchTerm.trim().toLowerCase();
   return state.items.filter(item => {
     const matchSection = activeSection === 'Todos' || (item.section || 'Sem seção') === activeSection;
-    const haystack = [item.category, item.section, item.product, item.price, item.description, item.notes, item.option, item.volume].join(' ').toLowerCase();
+    const haystack = [item.category, item.section, item.product, item.price, item.description, item.notes, item.option, item.volume, item.serve, item.availability].join(' ').toLowerCase();
     const matchTerm = !term || haystack.includes(term);
     return matchSection && matchTerm;
   });
-}
-
-function sectionRank(sectionName) {
-  const index = PRINT_SECTION_ORDER.indexOf(sectionName || 'Sem seção');
-  return index === -1 ? 999 : index;
 }
 
 function orderItemsForPrint() {
@@ -150,18 +204,46 @@ function orderItemsForPrint() {
   });
 }
 
+function setControlValues() {
+  const values = {
+    restaurantName: state.restaurant.name || '',
+    restaurantWhatsapp: state.restaurant.whatsapp || '',
+    restaurantInstagram: state.restaurant.instagram || '',
+    restaurantAddress: state.restaurant.address || '',
+    restaurantTagline: state.restaurant.tagline || '',
+    qrLabel: state.restaurant.qrLabel || 'Cardápio virtual',
+    pageFormat: state.settings.pageFormat,
+    themeSelect: state.settings.theme,
+    densitySelect: state.settings.density,
+    watermarkSelect: state.settings.watermark,
+    fontScale: state.settings.fontScale,
+    maxPages: state.settings.maxPages,
+    headerBrandMode: state.settings.headerBrandMode
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const el = $('#' + id);
+    if (el) el.value = value;
+  });
+  $('#showDescriptions').checked = state.settings.showDescriptions !== false;
+  $('#showImages').checked = state.settings.showImages === true;
+  $('#breakBySection').checked = state.settings.breakBySection === true;
+  $('#showQrCode').checked = state.settings.showQrCode === true;
+  const fontScaleLabel = $('#fontScaleLabel');
+  if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
+}
+
 function bindSettings() {
   setControlValues();
 
-  ['restaurantName','restaurantWhatsapp','restaurantInstagram','restaurantAddress','restaurantTagline','qrLabel'].forEach(id => {
-    const el = $('#'+id);
+  const mappedFields = {
+    restaurantName: 'name', restaurantWhatsapp: 'whatsapp', restaurantInstagram: 'instagram',
+    restaurantAddress: 'address', restaurantTagline: 'tagline', qrLabel: 'qrLabel'
+  };
+  Object.keys(mappedFields).forEach(id => {
+    const el = $('#' + id);
     if (!el) return;
     el.addEventListener('input', event => {
-      const map = {
-        restaurantName: 'name', restaurantWhatsapp: 'whatsapp', restaurantInstagram: 'instagram',
-        restaurantAddress: 'address', restaurantTagline: 'tagline', qrLabel: 'qrLabel'
-      };
-      state.restaurant[map[id]] = event.target.value;
+      state.restaurant[mappedFields[id]] = event.target.value;
       renderPreview();
     });
   });
@@ -212,7 +294,6 @@ function bindSettings() {
 
   $('#pageFormat').addEventListener('change', event => {
     state.settings.pageFormat = event.target.value;
-    state.settings.maxPages = clampPages(state.settings.maxPages || 9);
     renderPreview();
   });
   $('#themeSelect').addEventListener('change', event => {
@@ -221,6 +302,16 @@ function bindSettings() {
   });
   $('#densitySelect').addEventListener('change', event => {
     state.settings.density = event.target.value;
+    renderPreview();
+  });
+  $('#watermarkSelect').addEventListener('change', event => {
+    state.settings.watermark = event.target.value;
+    renderPreview();
+  });
+  $('#fontScale').addEventListener('input', event => {
+    state.settings.fontScale = clampFontScale(event.target.value);
+    event.target.value = state.settings.fontScale;
+    $('#fontScaleLabel').textContent = `${state.settings.fontScale}%`;
     renderPreview();
   });
   $('#maxPages').addEventListener('input', event => {
@@ -242,43 +333,18 @@ function bindSettings() {
   });
 }
 
-function setControlValues() {
-  const values = {
-    restaurantName: state.restaurant.name || '',
-    restaurantWhatsapp: state.restaurant.whatsapp || '',
-    restaurantInstagram: state.restaurant.instagram || '',
-    restaurantAddress: state.restaurant.address || '',
-    restaurantTagline: state.restaurant.tagline || '',
-    qrLabel: state.restaurant.qrLabel || 'Cardápio virtual',
-    pageFormat: state.settings.pageFormat || 'folder-9-a4',
-    themeSelect: state.settings.theme || 'boteco',
-    densitySelect: state.settings.density || 'compact',
-    maxPages: clampPages(state.settings.maxPages || 9),
-    headerBrandMode: state.settings.headerBrandMode || 'text'
-  };
-  Object.entries(values).forEach(([id, value]) => {
-    const el = $('#'+id);
-    if (el) el.value = value;
-  });
-  $('#showDescriptions').checked = state.settings.showDescriptions !== false;
-  $('#showImages').checked = state.settings.showImages === true;
-  $('#breakBySection').checked = state.settings.breakBySection === true;
-  $('#showQrCode').checked = state.settings.showQrCode === true;
-}
-
-function readImageFile(file, callback) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => callback(reader.result);
-  reader.readAsDataURL(file);
-}
-
 function renderSectionFilter() {
   const select = $('#sectionFilter');
-  const sections = ['Todos', ...getSections()];
-  select.innerHTML = sections.map(section => `<option value="${escapeHtml(section)}">${escapeHtml(section)}</option>`).join('');
-  select.value = sections.includes(activeSection) ? activeSection : 'Todos';
+  const options = ['Todos', ...getSections()];
+  select.innerHTML = options.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+  select.value = options.includes(activeSection) ? activeSection : 'Todos';
   activeSection = select.value;
+}
+
+function updatePriceValue(item, value) {
+  const normalized = String(value || '').replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
+  const parsed = Number(normalized);
+  item.priceValue = Number.isNaN(parsed) ? null : parsed;
 }
 
 function renderEditor() {
@@ -300,6 +366,10 @@ function renderEditor() {
       if (input.type !== 'file') input.value = item[key] || '';
       input.addEventListener('input', event => {
         item[key] = event.target.value;
+        if (key === 'price') {
+          item.priceBlank = !String(event.target.value || '').trim();
+          updatePriceValue(item, event.target.value);
+        }
         if (key === 'product') $('[data-field="product"]', card).textContent = item.product || 'Novo item';
         renderPreview();
       });
@@ -334,15 +404,15 @@ function groupBySection(items) {
     }
     map.get(name).push(item);
   });
-  return sections.map(name => ({ name, items: map.get(name) }));
+  return sections.map(name => ({ name, items: map.get(name) })).sort((a, b) => sectionRank(a.name) - sectionRank(b.name) || a.name.localeCompare(b.name, 'pt-BR'));
 }
 
-function createPrintSections(items) {
-  const bySection = groupBySection(items).sort((a, b) => sectionRank(a.name) - sectionRank(b.name));
-  return bySection.map(section => ({
-    name: section.name,
-    items: groupItemsForLayout(section.items)
-  }));
+function buildVariantLabel(item) {
+  return onlyFilled([item.option, item.volume, item.serve, item.availability]);
+}
+
+function isReviewText(value) {
+  return String(value || '').trim().toLowerCase().includes('revis');
 }
 
 function groupItemsForLayout(items) {
@@ -356,50 +426,23 @@ function groupItemsForLayout(items) {
         description: item.description || '',
         notes: item.notes || '',
         image: item.image || '',
-        variants: [],
-        rawItems: []
+        variants: []
       });
     }
     const group = map.get(key);
     if (!group.image && item.image) group.image = item.image;
-    group.rawItems.push(item);
     group.variants.push({
       label: buildVariantLabel(item),
       price: item.price || '',
-      review: !item.price || String(item.price).toLowerCase().includes('revisar')
+      blankPrice: item.priceBlank === true,
+      review: item.priceBlank === true ? false : (!item.price || isReviewText(item.price))
     });
   });
   return Array.from(map.values()).sort((a, b) => String(a.product).localeCompare(String(b.product), 'pt-BR', { sensitivity: 'base' }));
 }
 
-function buildVariantLabel(item) {
-  return onlyFilled([item.option, item.volume, item.serve, item.availability]);
-}
-
-function renderPreview() {
-  normalizeSettings();
-  const paper = $('#pdfArea');
-  renderPagedPreview(paper);
-}
-
-function renderPagedPreview(paper) {
-  const config = getCurrentConfig();
-  const maxPages = clampPages(state.settings.maxPages || 9);
-  paper.className = `paper menu-book ${config.css} theme-${state.settings.theme || 'boteco'} density-${state.settings.density || 'compact'} columns-${config.columns}`;
-  paper.style.setProperty('--page-w', `${config.widthPx}px`);
-  paper.style.setProperty('--page-h', `${config.heightPx}px`);
-  paper.style.setProperty('--folder-columns', config.columns);
-
-  const sections = createPrintSections(filteredItems());
-  const result = paginateSections(sections, maxPages, config);
-  const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
-
-  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, maxPages, result.overflowCount, config)).join('');
-  const pageInfo = $('#pageInfo');
-  if (pageInfo) {
-    const overflow = result.overflowCount > 0 ? ` · Atenção: ${result.overflowCount} item(ns) concentrados na última página` : '';
-    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${overflow}`;
-  }
+function createPrintSections(items) {
+  return groupBySection(items).map(section => ({ name: section.name, items: groupItemsForLayout(section.items) }));
 }
 
 function itemWeight(item) {
@@ -409,20 +452,24 @@ function itemWeight(item) {
   if (variantCount > 1) weight += Math.min(1.15, variantCount * 0.18);
   if (state.settings.showDescriptions !== false) {
     if (descLength > 45) weight += 0.16;
-    if (descLength > 100) weight += 0.24;
-    if (descLength > 180) weight += 0.22;
+    if (descLength > 100) weight += 0.22;
+    if (descLength > 180) weight += 0.20;
   }
-  if (state.settings.showImages && item.image) weight += 0.38;
-  return weight;
+  if (state.settings.showImages && item.image) weight += 0.36;
+  const fontImpact = (state.settings.fontScale - 100) / 100;
+  weight += fontImpact * 1.4;
+  return Math.max(0.6, weight);
 }
 
 function pageCapacity(pageIndex, config) {
-  const compact = (state.settings.density || 'compact') === 'compact';
+  const compact = state.settings.density === 'compact';
   let capacity = compact ? config.compactCapacity : config.normalCapacity;
   if (state.settings.headerBrandMode === 'logo' && state.restaurant.logo) capacity -= 0.5;
   if (state.settings.showQrCode && state.restaurant.qrImage) capacity -= 0.8;
-  if (pageIndex === 0 && state.restaurant.tagline) capacity -= 0.5;
-  return Math.max(5, capacity);
+  if (pageIndex === 0 && state.restaurant.tagline) capacity -= 0.4;
+  const fontImpact = (state.settings.fontScale - 100) / 4; // 104 => -1 capacity approximately
+  capacity -= fontImpact;
+  return Math.max(4.4, capacity);
 }
 
 function paginateSections(sections, maxPages, config) {
@@ -437,54 +484,55 @@ function paginateSections(sections, maxPages, config) {
     return true;
   };
 
-  const sectionHeaderWeight = 1.35;
-  const addChunk = (name, items, continuation = false) => {
+  const sectionHeaderWeight = 1.25;
+
+  function addChunk(name, items, continuation = false) {
     const chunkWeight = sectionHeaderWeight + items.reduce((total, item) => total + itemWeight(item), 0);
     pages[pageIndex].sections.push({ name, items, continuation });
     pages[pageIndex].weight += chunkWeight;
-  };
+  }
 
   sections.forEach(section => {
     let remaining = [...section.items];
     let continuation = false;
-
     while (remaining.length) {
-      const current = pages[pageIndex];
-      const available = pageCapacity(pageIndex, config) - current.weight - sectionHeaderWeight;
+      const currentPage = pages[pageIndex];
+      const available = pageCapacity(pageIndex, config) - currentPage.weight - sectionHeaderWeight;
 
-      if (state.settings.breakBySection && current.sections.length && !continuation) {
+      if (state.settings.breakBySection && currentPage.sections.length && !continuation) {
         if (goNextPage()) continue;
       }
 
-      if (available < 1.1 && current.sections.length && goNextPage()) continue;
+      if (available < 1 && currentPage.sections.length) {
+        if (goNextPage()) continue;
+      }
 
-      if (pageIndex + 1 >= maxPages && available < 1.1 && current.sections.length) {
+      if (pageIndex + 1 >= maxPages && available < 1 && currentPage.sections.length) {
         overflowCount += remaining.length;
         addChunk(section.name, remaining.splice(0), true);
         break;
       }
 
       let chunk = [];
-      let weight = 0;
+      let chunkWeight = 0;
       while (remaining.length) {
-        const nextWeight = itemWeight(remaining[0]);
-        const limit = Math.max(1.1, pageCapacity(pageIndex, config) - pages[pageIndex].weight - sectionHeaderWeight);
-        if (chunk.length && weight + nextWeight > limit) break;
+        const next = remaining[0];
+        const nextWeight = itemWeight(next);
+        const limit = Math.max(1.05, pageCapacity(pageIndex, config) - pages[pageIndex].weight - sectionHeaderWeight);
+        if (chunk.length && chunkWeight + nextWeight > limit) break;
         chunk.push(remaining.shift());
-        weight += nextWeight;
-        if (weight >= limit) break;
+        chunkWeight += nextWeight;
+        if (chunkWeight >= limit) break;
       }
 
       if (!chunk.length && remaining.length) chunk.push(remaining.shift());
       addChunk(section.name, chunk, continuation);
       continuation = true;
 
-      if (remaining.length) {
-        if (!goNextPage()) {
-          overflowCount += remaining.length;
-          addChunk(section.name, remaining.splice(0), true);
-          break;
-        }
+      if (remaining.length && !goNextPage()) {
+        overflowCount += remaining.length;
+        addChunk(section.name, remaining.splice(0), true);
+        break;
       }
     }
   });
@@ -492,43 +540,81 @@ function paginateSections(sections, maxPages, config) {
   return { pages: pages.filter(page => page.sections.length), overflowCount };
 }
 
-function renderMenuPage(page, pageNumber, maxPages, overflowCount, config) {
-  const overflowWarning = overflowCount > 0 && pageNumber === maxPages
-    ? `<div class="folder-warning">Atenção: há itens extras concentrados nesta página. Para manter tudo legível, reduza descrições, desative imagens ou divida o cardápio.</div>`
+function applyPaperVariables(paper) {
+  const config = getCurrentConfig();
+  const palette = getPalette();
+  paper.className = `paper menu-book ${config.css} density-${state.settings.density}`;
+  paper.style.setProperty('--page-w', `${config.widthPx}px`);
+  paper.style.setProperty('--page-h', `${config.heightPx}px`);
+  paper.style.setProperty('--folder-columns', config.columns);
+  paper.style.setProperty('--font-scale', `${state.settings.fontScale / 100}`);
+  paper.style.setProperty('--paper-bg', palette.paper);
+  paper.style.setProperty('--ink', palette.ink);
+  paper.style.setProperty('--muted', palette.muted);
+  paper.style.setProperty('--gold', palette.gold);
+  paper.style.setProperty('--gold-soft', palette.goldSoft);
+  paper.style.setProperty('--line', palette.line);
+  paper.style.setProperty('--note-bg', palette.noteBg);
+  paper.style.setProperty('--header-start', palette.headStart);
+  paper.style.setProperty('--header-end', palette.headEnd);
+  paper.style.setProperty('--page-glow-1', palette.pageGlow1);
+  paper.style.setProperty('--page-glow-2', palette.pageGlow2);
+  document.body.style.background = `radial-gradient(circle at top left, ${palette.bodyGlow}, ${palette.bodyBg} 42%, #050505)`;
+  paper.style.setProperty('--wm-svg', getWatermarkDataUrl());
+}
+
+function renderPreview() {
+  normalizeSettings();
+  const paper = $('#pdfArea');
+  applyPaperVariables(paper);
+  const config = getCurrentConfig();
+  const maxPages = clampPages(state.settings.maxPages);
+  const sections = createPrintSections(filteredItems());
+  const result = paginateSections(sections, maxPages, config);
+  const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
+
+  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config)).join('');
+  const pageInfo = $('#pageInfo');
+  if (pageInfo) {
+    const overflow = result.overflowCount > 0 ? ` · ${result.overflowCount} item(ns) concentrados na última página` : '';
+    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${overflow}`;
+  }
+}
+
+function renderMenuPage(page, pageNumber, totalPages, overflowCount, config) {
+  const overflowWarning = overflowCount > 0 && pageNumber === totalPages
+    ? `<div class="folder-warning">Há conteúdo demais na última página. Tente reduzir descrições, diminuir a fonte, trocar para densidade compacta ou organizar o layout novamente.</div>`
     : '';
   return `
     <article class="menu-page" data-page="${pageNumber}">
-      ${renderPageHeader(pageNumber, maxPages, config)}
+      ${renderPageHeader(pageNumber, totalPages)}
       <main class="folder-body">
         ${overflowWarning}
         ${page.sections.length ? page.sections.map(renderFolderSection).join('') : '<div class="empty-page">Espaço reservado para novos itens.</div>'}
       </main>
       <footer class="folder-footer">
         <span>Valores sujeitos à alteração.</span>
-        <span>${escapeHtml(config.label)} · Página ${pageNumber}/${maxPages}</span>
+        <span>${escapeHtml(config.label)} · Página ${pageNumber}/${totalPages}</span>
       </footer>
     </article>
   `;
 }
 
-function renderPageHeader(pageNumber, maxPages, config) {
+function renderPageHeader(pageNumber, totalPages) {
   const isFirst = pageNumber === 1;
-  const brand = renderHeaderBrand(isFirst);
-  const qr = renderHeaderQr();
-  const qrClass = qr ? ' has-qr' : '';
   return `
-    <header class="folder-header ${isFirst ? 'first' : ''}${qrClass}">
+    <header class="folder-header ${isFirst ? 'first' : ''}${state.settings.showQrCode && state.restaurant.qrImage ? ' has-qr' : ''}">
       <div class="folder-brand-wrap">
-        ${brand}
+        ${renderHeaderBrand(isFirst)}
         ${isFirst && state.restaurant.tagline ? `<p class="folder-tagline">${escapeHtml(state.restaurant.tagline)}</p>` : ''}
       </div>
       <div class="folder-side">
-        ${qr}
+        ${renderHeaderQr()}
         <div class="folder-contact">
           <span>${escapeHtml(state.restaurant.whatsapp || '')}</span>
           <span>${escapeHtml(state.restaurant.instagram || '')}</span>
           <span>${escapeHtml(state.restaurant.address || '')}</span>
-          <strong>Página ${pageNumber}/${maxPages}</strong>
+          <strong>Página ${pageNumber}/${totalPages}</strong>
         </div>
       </div>
     </header>
@@ -571,10 +657,16 @@ function renderFolderSection(section) {
   `;
 }
 
+function renderPriceBalloon(variant) {
+  if (variant.blankPrice) return `<span class="price-balloon empty"></span>`;
+  if (variant.review) return `<span class="price-balloon review">Revisar</span>`;
+  return `<span class="price-balloon">${escapeHtml(variant.price || '')}</span>`;
+}
+
 function renderFolderItem(item) {
-  const variants = Array.isArray(item.variants) && item.variants.length ? item.variants : [{ label: '', price: item.price || '', review: !item.price }];
+  const variants = Array.isArray(item.variants) && item.variants.length ? item.variants : [{ label: '', price: item.price || '', blankPrice: item.blankPrice === true, review: !item.price }];
   const singleVariant = variants.length === 1;
-  const firstVariant = variants[0] || { label: '', price: '', review: true };
+  const firstVariant = variants[0] || { label: '', price: '', blankPrice: false, review: true };
   const meta = singleVariant ? firstVariant.label : '';
   const desc = state.settings.showDescriptions !== false && item.description ? `<p class="folder-desc">${escapeHtml(item.description)}</p>` : '';
   const note = item.notes ? `<span class="folder-note">${escapeHtml(item.notes)}</span>` : '';
@@ -582,18 +674,19 @@ function renderFolderItem(item) {
   const variantList = !singleVariant ? `
     <div class="folder-variants">
       ${variants.map(variant => `
-        <span class="folder-variant ${variant.review ? 'review' : ''}">
+        <span class="folder-variant ${variant.review ? 'review' : ''}${variant.blankPrice ? ' empty' : ''}">
           <span>${escapeHtml(variant.label || 'Opção')}</span>
-          <b>${escapeHtml(variant.price || 'Revisar')}</b>
+          ${renderPriceBalloon(variant)}
         </span>`).join('')}
     </div>` : '';
+
   return `
     <article class="folder-item ${image ? 'with-thumb' : ''}">
       ${image}
       <div class="folder-item-main">
         <div class="folder-item-top">
           <strong>${escapeHtml(item.product)}</strong>
-          ${singleVariant ? `<span class="folder-price ${firstVariant.review ? 'review' : ''}">${escapeHtml(firstVariant.price || 'Revisar')}</span>` : ''}
+          ${singleVariant ? renderPriceBalloon(firstVariant) : ''}
         </div>
         ${meta ? `<div class="folder-meta">${escapeHtml(meta)}</div>` : ''}
         ${variantList}
@@ -604,32 +697,27 @@ function renderFolderItem(item) {
   `;
 }
 
-function initials(text = '') {
-  const parts = text.trim().split(/\s+/).slice(0, 2);
-  return parts.map(p => p[0]).join('').toUpperCase() || 'C';
-}
-
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, char => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
-  }[char]));
+  return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char]));
 }
 
 function autoLayout() {
-  const selectedFormat = state.settings.pageFormat || 'folder-9-a4';
-  const config = FORMAT_CONFIGS[selectedFormat] || FORMAT_CONFIGS['folder-9-a4'];
-  orderItemsForPrint();
-  state.settings.pageFormat = selectedFormat;
-  state.settings.maxPages = clampPages(state.settings.maxPages || 9);
+  const selectedFormat = state.settings.pageFormat;
   state.settings.density = 'compact';
   state.settings.showImages = false;
-  state.settings.showDescriptions = !['feed-4x5', 'story-9x16'].includes(selectedFormat);
   state.settings.breakBySection = false;
+  state.settings.showDescriptions = !['feed-4x5', 'story-9x16'].includes(selectedFormat);
+  state.settings.fontScale = selectedFormat === 'folder-9-a4' ? 96 : 100;
+  if (selectedFormat === 'a5-portrait') state.settings.fontScale = 96;
+  if (selectedFormat === 'story-9x16') state.settings.fontScale = 92;
+  if (selectedFormat === 'feed-4x5') state.settings.fontScale = 96;
+  setControlValues();
   activeSection = 'Todos';
   searchTerm = '';
   $('#searchInput').value = '';
+  orderItemsForPrint();
   renderAll();
-  toast(`Layout organizado para ${config.label}, evitando quebras e páginas brancas.`);
+  toast(`Layout reorganizado para ${getCurrentConfig().label}.`);
 }
 
 function zeroCategoryPrices() {
@@ -637,26 +725,27 @@ function zeroCategoryPrices() {
     alert('Escolha primeiro uma categoria/seção no filtro. Depois clique em “Zerar valores da categoria”.');
     return;
   }
-  const sectionName = activeSection;
-  const targets = state.items.filter(item => (item.section || 'Sem seção') === sectionName);
+  const targets = state.items.filter(item => (item.section || 'Sem seção') === activeSection);
   if (!targets.length) {
     alert('Não encontrei itens nessa categoria.');
     return;
   }
-  if (!confirm(`Zerar os valores de ${targets.length} item(ns) em “${sectionName}”?`)) return;
+  if (!confirm(`Limpar os preços de ${targets.length} item(ns) em “${activeSection}”?`)) return;
   targets.forEach(item => {
-    item.price = 'R$ 0,00';
-    item.priceValue = 0;
+    item.price = '';
+    item.priceValue = null;
+    item.priceBlank = true;
   });
   renderAll();
-  toast(`Valores zerados em “${sectionName}”.`);
+  toast(`Preços limpos em “${activeSection}”. O balão continua branco e vazio.`);
 }
 
 function addItem() {
   const section = activeSection === 'Todos' ? 'Nova seção' : activeSection;
   state.items.unshift({
-    id: `${Date.now()}-novo-item`, category: 'Cardápio', section, product: 'Novo item', option: '', volume: '', serve: '',
-    price: 'R$ 0,00', priceValue: 0, description: '', availability: '', notes: '', image: ''
+    id: `${Date.now()}-novo-item`,
+    category: 'Cardápio', section, product: 'Novo item', option: '', volume: '', serve: '', availability: '',
+    price: '', priceValue: null, priceBlank: true, description: '', notes: '', image: ''
   });
   activeSection = section;
   renderAll();
@@ -678,15 +767,15 @@ function importJson(file) {
   reader.onload = () => {
     try {
       const imported = JSON.parse(reader.result);
-      if (!imported.items || !Array.isArray(imported.items)) throw new Error('JSON sem lista de itens.');
+      if (!Array.isArray(imported.items)) throw new Error('JSON sem lista de itens.');
       state = imported;
       normalizeSettings();
       activeSection = 'Todos';
       renderAll();
       toast('JSON importado com sucesso.');
     } catch (error) {
-      alert('Não consegui importar esse JSON. Confira o arquivo.');
       console.error(error);
+      alert('Não consegui importar esse JSON. Confira o arquivo.');
     }
   };
   reader.readAsText(file);
@@ -767,7 +856,7 @@ async function generateManualPdf(pages, config, filename) {
 
 function renderAll() {
   normalizeSettings();
-  if (!bound) {
+  if (!isBound) {
     bindSettings();
     $('#sectionFilter').addEventListener('change', event => { activeSection = event.target.value; renderEditor(); renderPreview(); });
     $('#searchInput').addEventListener('input', event => { searchTerm = event.target.value; renderEditor(); renderPreview(); });
@@ -779,7 +868,7 @@ function renderAll() {
     $('#btnReset').addEventListener('click', resetData);
     $('#btnPdf').addEventListener('click', generatePdf);
     $('#jsonImport').addEventListener('change', event => { if (event.target.files?.[0]) importJson(event.target.files[0]); });
-    bound = true;
+    isBound = true;
   } else {
     setControlValues();
   }

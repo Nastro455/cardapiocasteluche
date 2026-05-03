@@ -79,11 +79,41 @@
               <option value="story-9x16">Stories 9:16</option>
             </select>
           </label>
-          <label>Tema
+          <label>Paleta de cores
             <select id="themeSelect">
-              <option value="boteco">Boteco premium</option>
-              <option value="clean">Clean claro</option>
-              <option value="dark">Escuro elegante</option>
+              <option value="boteco">Boteco Ouro</option>
+              <option value="barro">Barro Quente</option>
+              <option value="caju">Caju &amp; Sol</option>
+              <option value="mandacaru">Mandacaru</option>
+              <option value="coqueiro">Coqueiro Marrom</option>
+              <option value="areia">Areia Clara</option>
+              <option value="forro">Forró Vinho</option>
+              <option value="lampiao">Lampião Cobre</option>
+              <option value="sertao">Sertão Azul</option>
+              <option value="noite">Noite Premium</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid-2">
+          <label>Marca d'água
+            <select id="watermarkSelect">
+              <option value="none">Sem marca d'água</option>
+              <option value="sanfona">Sanfona</option>
+              <option value="mandacaru">Mandacaru</option>
+              <option value="chapeu">Chapéu de couro</option>
+              <option value="zabumba">Zabumba</option>
+              <option value="sol">Sol do sertão</option>
+              <option value="pimenta">Pimenta</option>
+              <option value="fita">Fita junina</option>
+              <option value="casal">Casal dançando</option>
+              <option value="bandeirolas">Bandeirolas</option>
+              <option value="xilogravura">Xilogravura</option>
+            </select>
+          </label>
+          <label>Densidade
+            <select id="densitySelect">
+              <option value="compact">Compacta</option>
+              <option value="normal">Normal</option>
             </select>
           </label>
         </div>
@@ -91,11 +121,11 @@
           <label>Limite de páginas
             <input id="maxPages" type="number" min="1" max="9" value="9" />
           </label>
-          <label>Densidade
-            <select id="densitySelect">
-              <option value="compact">Compacta</option>
-              <option value="normal">Normal</option>
-            </select>
+          <label>Tamanho da fonte
+            <div class="range-stack">
+              <input id="fontScale" type="range" min="92" max="108" step="4" value="100" />
+              <span id="fontScaleLabel" class="range-value">100%</span>
+            </div>
           </label>
         </div>
         <div class="checks">
@@ -106,7 +136,7 @@
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">A organização agora vale para o <strong>modelo selecionado</strong>. Ela compacta, pagina e agrupa variações para evitar informações quebradas e páginas brancas no PDF.</p>
+        <p class="panel-note">Agora você pode testar <strong>10 paletas</strong>, <strong>10 marcas d'água</strong> e ajustar a fonte em níveis seguros. O botão de organizar recalcula a distribuição para o modelo selecionado.</p>
       </section>
 
       <section class="panel">
@@ -121,7 +151,7 @@
           <button class="btn warning" id="btnZeroCategory">Zerar valores da categoria</button>
           <button class="btn danger" id="btnReset">Restaurar base</button>
         </div>
-        <p class="panel-note">Para zerar valores, escolha uma categoria/seção no filtro acima. O botão define os preços como <strong>R$ 0,00</strong>.</p>
+        <p class="panel-note">Quando os valores forem zerados, o preço não aparece como <strong>R$ 0,00</strong>. O cardápio exibe apenas o <strong>balão branco vazio</strong> para você preencher depois.</p>
         <div id="editorList" class="editor-list"></div>
       </section>
     </aside>
@@ -136,25 +166,7 @@
         <div class="hint">Para PDF: clique em “Gerar PDF”. Se o navegador bloquear, use Ctrl+P e salve como PDF.</div>
       </div>
 
-      <div id="pdfArea" class="paper format-a4-portrait theme-boteco">
-        <div class="menu-cover">
-          <div class="brand-block">
-            <p class="eyebrow">Menu oficial</p>
-            <h2 id="previewRestaurantName">Casteluche</h2>
-            <p id="previewTagline">Refeições, porções, lanches, drinks e bebidas</p>
-          </div>
-          <div class="contact-block">
-            <span id="previewWhatsapp">(11) 93231-1331</span>
-            <span id="previewInstagram">@castelucheshow</span>
-            <span id="previewAddress">Av. Manuel Sabino de Oliveira, 3900</span>
-          </div>
-        </div>
-        <div id="menuPreview" class="menu-preview"></div>
-        <footer class="menu-footer">
-          <span>Valores sujeitos à alteração.</span>
-          <span>Gerado no Gerador de Cardápio Casteluche.</span>
-        </footer>
-      </div>
+      <div id="pdfArea" class="paper format-a4-portrait theme-boteco"></div>
     </section>
   </main>
 
