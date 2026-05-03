@@ -111,3 +111,16 @@ Fluxo recomendado:
 ## Atualização — limite de páginas configurável
 
 O campo **Limite de páginas** não fica mais travado em 9. O padrão continua sendo 9 para o cardápio físico atual do Casteluche, mas o operador pode informar outro limite de páginas, de 1 a 99, caso a pasta física ou o uso digital mude no futuro.
+
+## Atualização V13 — Tipos de cardápio e painel minimizável
+
+Esta versão mantém o **Cardápio Especial** original e adiciona um painel chamado **Tipo de cardápio** com quatro bases separadas:
+
+- Cardápio Especial
+- Cardápio Semanal
+- Menu de Lanches
+- Menu de Bebidas
+
+Ao trocar o tipo, a ferramenta carrega a base correspondente sem alterar a base especial original. Também foram adicionados painéis minimizáveis e a lateral de configuração acompanha a rolagem vertical da página em telas maiores.
+
+O botão **Exportar cardápio público** continua disponível para gerar um HTML separado do cardápio final, pronto para ser hospedado no GitHub Pages.
