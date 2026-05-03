@@ -827,15 +827,118 @@ function renderPreview() {
   const maxPages = clampPages(state.settings.maxPages);
   const sections = createPrintSections(filteredItems());
   const result = paginateSections(sections, maxPages, config);
-  const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
+  let pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
+  let overflowCount = result.overflowCount || 0;
   const menuSections = sections.map(section => section.name);
 
-  paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config, menuSections)).join('');
+  renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
+  const fitted = fitPagesByRealHeight(paper, pages, maxPages, config, menuSections, overflowCount);
+  pages = fitted.pages;
+  overflowCount = fitted.overflowCount;
+  renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
+  updatePageInfo(pages, config, maxPages, overflowCount, fitted.adjustments);
+}
+
+function renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections) {
+  const safePages = pages.filter(page => page.sections.some(section => section.items.length));
+  const outputPages = safePages.length ? safePages : [{ sections: [], weight: 0 }];
+  paper.innerHTML = outputPages
+    .map((page, index) => renderMenuPage(page, index + 1, outputPages.length, overflowCount, config, menuSections))
+    .join('');
+}
+
+function updatePageInfo(pages, config, maxPages, overflowCount = 0, adjustments = 0) {
   const pageInfo = $('#pageInfo');
-  if (pageInfo) {
-    const overflow = result.overflowCount > 0 ? ` · ${result.overflowCount} item(ns) concentrados na última página` : '';
-    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${overflow}`;
+  if (!pageInfo) return;
+  const overflow = overflowCount > 0 ? ` · atenção: ${overflowCount} item(ns) ainda precisam de mais espaço` : '';
+  const adjusted = adjustments > 0 ? ` · ajuste real aplicado` : '';
+  pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${adjusted}${overflow}`;
+}
+
+function pageIsVisuallyOverflowing(pageEl) {
+  if (!pageEl) return false;
+  const body = $('.folder-body', pageEl);
+  if (!body) return false;
+  return body.scrollHeight > body.clientHeight + 3;
+}
+
+function firstOverflowingPageIndex(paper) {
+  const pageEls = $$('.menu-page', paper);
+  return pageEls.findIndex(pageIsVisuallyOverflowing);
+}
+
+function normalizePagesForLayout(pages) {
+  pages.forEach(page => {
+    page.sections = page.sections
+      .map(section => ({ ...section, items: section.items.filter(Boolean) }))
+      .filter(section => section.items.length);
+    page.weight = page.sections.reduce((total, section) => (
+      total + 1.25 + section.items.reduce((sum, item) => sum + itemWeight(item), 0)
+    ), 0);
+  });
+  return pages.filter(page => page.sections.length);
+}
+
+function moveLastItemToNextPage(pages, pageIndex, maxPages) {
+  const from = pages[pageIndex];
+  if (!from) return false;
+
+  let fromSectionIndex = from.sections.length - 1;
+  while (fromSectionIndex >= 0 && (!from.sections[fromSectionIndex].items || !from.sections[fromSectionIndex].items.length)) {
+    fromSectionIndex -= 1;
   }
+  if (fromSectionIndex < 0) return false;
+
+  const fromSection = from.sections[fromSectionIndex];
+  const movedItem = fromSection.items.pop();
+  const sectionName = fromSection.name;
+  if (!movedItem) return false;
+  if (!fromSection.items.length) from.sections.splice(fromSectionIndex, 1);
+
+  if (!pages[pageIndex + 1]) {
+    if (pages.length >= maxPages) {
+      fromSection.items.push(movedItem);
+      return false;
+    }
+    pages[pageIndex + 1] = { sections: [], weight: 0 };
+  }
+
+  const nextPage = pages[pageIndex + 1];
+  const firstSection = nextPage.sections[0];
+  if (firstSection && firstSection.name === sectionName) {
+    firstSection.items.unshift(movedItem);
+    firstSection.continuation = true;
+  } else {
+    nextPage.sections.unshift({ name: sectionName, items: [movedItem], continuation: true });
+  }
+  normalizePagesForLayout(pages);
+  return true;
+}
+
+function fitPagesByRealHeight(paper, originalPages, maxPages, config, menuSections, initialOverflowCount = 0) {
+  let pages = structuredClone(originalPages);
+  let overflowCount = initialOverflowCount;
+  let adjustments = 0;
+  const limit = 260;
+
+  for (let attempt = 0; attempt < limit; attempt += 1) {
+    renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
+    const overflowIndex = firstOverflowingPageIndex(paper);
+    if (overflowIndex === -1) {
+      return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
+    }
+
+    const moved = moveLastItemToNextPage(pages, overflowIndex, maxPages);
+    if (!moved) {
+      const page = pages[overflowIndex];
+      const remaining = page?.sections?.reduce((total, section) => total + section.items.length, 0) || 0;
+      overflowCount += remaining;
+      return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
+    }
+    adjustments += 1;
+  }
+
+  return { pages: normalizePagesForLayout(pages), overflowCount, adjustments };
 }
 
 function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, menuSections) {
