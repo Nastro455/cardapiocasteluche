@@ -5,6 +5,9 @@ let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
 let isBound = false;
+let precisePreviewTimer = null;
+let precisePreviewToken = 0;
+let isPreciseRendering = false;
 
 const PRINT_SECTION_ORDER = [
   'Feijoada', 'Pratos Principais', 'Pratos Nordestinos', 'Pratos Feitos', 'Adicionais',
@@ -152,6 +155,7 @@ function normalizeSettings() {
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.settings.imageScale = clampImageScale(state.settings.imageScale);
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
+  state.settings.livePrecision = state.settings.livePrecision === true;
   state.items = Array.isArray(state.items) ? state.items : [];
 }
 
@@ -435,6 +439,7 @@ function setControlValues() {
   $('#showImages').checked = state.settings.showImages === true;
   $('#breakBySection').checked = state.settings.breakBySection === true;
   $('#showDigitalMenu').checked = state.settings.showDigitalMenu === true;
+  if ($('#livePrecision')) $('#livePrecision').checked = state.settings.livePrecision === true;
   $('#showQrCode').checked = state.settings.showQrCode === true;
   const fontScaleLabel = $('#fontScaleLabel');
   if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
@@ -564,6 +569,13 @@ function bindSettings() {
     state.settings.showDigitalMenu = event.target.checked;
     renderPreview();
   });
+
+  if ($('#livePrecision')) {
+    $('#livePrecision').addEventListener('change', event => {
+      state.settings.livePrecision = event.target.checked;
+      renderPreview(event.target.checked ? { precise: true } : {});
+    });
+  }
   $('#breakBySection').addEventListener('change', event => {
     state.settings.breakBySection = event.target.checked;
     renderPreview();
@@ -819,7 +831,26 @@ function applyPaperVariables(paper) {
   paper.style.setProperty('--wm-svg', getWatermarkDataUrl());
 }
 
-function renderPreview() {
+function schedulePrecisePreview() {
+  if (!state.settings.livePrecision) return;
+  precisePreviewToken += 1;
+  const token = precisePreviewToken;
+  if (precisePreviewTimer) clearTimeout(precisePreviewTimer);
+  precisePreviewTimer = setTimeout(() => {
+    precisePreviewTimer = null;
+    if (token !== precisePreviewToken || isPreciseRendering) return;
+    requestAnimationFrame(() => renderPreview({ precise: true, fromIdle: true }));
+  }, 850);
+}
+
+function cancelScheduledPrecisePreview() {
+  precisePreviewToken += 1;
+  if (precisePreviewTimer) clearTimeout(precisePreviewTimer);
+  precisePreviewTimer = null;
+}
+
+function renderPreview(options = {}) {
+  const precise = options === true || options.precise === true;
   normalizeSettings();
   const paper = $('#pdfArea');
   applyPaperVariables(paper);
@@ -830,13 +861,27 @@ function renderPreview() {
   let pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
   let overflowCount = result.overflowCount || 0;
   const menuSections = sections.map(section => section.name);
+  let adjustments = 0;
 
+  // Renderização rápida: atualiza a tela imediatamente sem medir altura real.
+  // A medição fina fica para depois que o usuário para de mexer, evitando travamentos.
   renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
-  const fitted = fitPagesByRealHeight(paper, pages, maxPages, config, menuSections, overflowCount);
-  pages = fitted.pages;
-  overflowCount = fitted.overflowCount;
-  renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
-  updatePageInfo(pages, config, maxPages, overflowCount, fitted.adjustments);
+
+  if (precise) {
+    cancelScheduledPrecisePreview();
+    isPreciseRendering = true;
+    const fitted = fitPagesByRealHeight(paper, pages, maxPages, config, menuSections, overflowCount);
+    isPreciseRendering = false;
+    pages = fitted.pages;
+    overflowCount = fitted.overflowCount;
+    adjustments = fitted.adjustments;
+    renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections);
+    updatePageInfo(pages, config, maxPages, overflowCount, adjustments, true);
+    return;
+  }
+
+  updatePageInfo(pages, config, maxPages, overflowCount, 0, false);
+  schedulePrecisePreview();
 }
 
 function renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections) {
@@ -847,11 +892,11 @@ function renderPagesIntoPaper(paper, pages, overflowCount, config, menuSections)
     .join('');
 }
 
-function updatePageInfo(pages, config, maxPages, overflowCount = 0, adjustments = 0) {
+function updatePageInfo(pages, config, maxPages, overflowCount = 0, adjustments = 0, precise = false) {
   const pageInfo = $('#pageInfo');
   if (!pageInfo) return;
   const overflow = overflowCount > 0 ? ` · atenção: ${overflowCount} item(ns) ainda precisam de mais espaço` : '';
-  const adjusted = adjustments > 0 ? ` · ajuste real aplicado` : '';
+  const adjusted = precise ? (adjustments > 0 ? ` · ajuste real aplicado` : ` · ajuste real ok`) : (state.settings.livePrecision ? ` · preview rápido` : ` · preview leve`);
   pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${adjusted}${overflow}`;
 }
 
@@ -1164,6 +1209,7 @@ function autoLayout() {
   Object.assign(state.settings, chosen, { pageFormat: selectedFormat });
   setControlValues();
   renderAll();
+  renderPreview({ precise: true });
   const result = chosenResult || simulatePageCount();
   const status = result.overflowCount ? `Ainda há ${result.overflowCount} item(ns) concentrados na última página.` : `Fechou em ${result.pages} página(s).`;
   toast(`Organizador automático aplicado. ${status}`);
@@ -1261,7 +1307,7 @@ async function exportPublicMenu() {
   searchTerm = '';
   state.settings.showDigitalMenu = true;
   state.settings.usageMode = 'digital';
-  renderPreview();
+  renderPreview({ precise: true });
 
   const area = $('#pdfArea');
   const title = state.restaurant.name || 'Cardápio';
@@ -1329,7 +1375,7 @@ async function getInlineCssText() {
 
 async function generatePdf() {
   normalizeSettings();
-  renderPreview();
+  renderPreview({ precise: true });
   const area = $('#pdfArea');
   const pages = $$('.menu-page', area);
   const config = getCurrentConfig();
