@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Cardápio | Casteluche</title>
+  <meta name="description" content="Ferramenta estática para editar, visualizar e gerar PDF de cardápios para impressão." />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script defer src="data/menu-data.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="app-header no-print">
+    <div>
+      <p class="eyebrow">Casteluche</p>
+      <h1>Gerador de Cardápio Digital + PDF</h1>
+      <p class="header-copy">Edite preços, descrições, imagens e gere uma versão pronta para impressão.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn ghost" id="btnSave">Salvar no navegador</button>
+      <button class="btn ghost" id="btnExport">Exportar JSON</button>
+      <label class="btn ghost file-label" for="jsonImport">Importar JSON</label>
+      <input id="jsonImport" type="file" accept="application/json" hidden />
+      <button class="btn primary" id="btnPdf">Gerar PDF</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar no-print">
+      <section class="panel">
+        <div class="panel-title">
+          <span>01</span>
+          <h2>Dados do restaurante</h2>
+        </div>
+        <label>Nome do restaurante<input id="restaurantName" type="text" /></label>
+        <label>WhatsApp<input id="restaurantWhatsapp" type="text" /></label>
+        <label>Instagram<input id="restaurantInstagram" type="text" /></label>
+        <label>Endereço<input id="restaurantAddress" type="text" /></label>
+        <label>Frase curta<input id="restaurantTagline" type="text" /></label>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>02</span>
+          <h2>Formato e visual</h2>
+        </div>
+        <div class="grid-2">
+          <label>Formato
+            <select id="pageFormat">
+              <option value="a4-portrait">A4 vertical</option>
+              <option value="a4-landscape">A4 horizontal</option>
+              <option value="a5-portrait">A5 vertical</option>
+              <option value="feed-4x5">Feed 4:5</option>
+              <option value="story-9x16">Stories 9:16</option>
+            </select>
+          </label>
+          <label>Tema
+            <select id="themeSelect">
+              <option value="boteco">Boteco premium</option>
+              <option value="clean">Clean claro</option>
+              <option value="dark">Escuro elegante</option>
+            </select>
+          </label>
+        </div>
+        <div class="checks">
+          <label><input id="showDescriptions" type="checkbox" /> Mostrar descrições</label>
+          <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
+          <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>03</span>
+          <h2>Editar itens</h2>
+        </div>
+        <input id="searchInput" class="search" placeholder="Buscar produto, categoria ou preço..." />
+        <select id="sectionFilter"></select>
+        <div class="mini-actions">
+          <button class="btn secondary" id="btnAddItem">+ Adicionar item</button>
+          <button class="btn danger" id="btnReset">Restaurar base</button>
+        </div>
+        <div id="editorList" class="editor-list"></div>
+      </section>
+    </aside>
+
+    <section class="preview-shell">
+      <div class="preview-toolbar no-print">
+        <div>
+          <strong>Preview</strong>
+          <span id="itemCount"></span>
+        </div>
+        <div class="hint">Para PDF: clique em “Gerar PDF”. Se o navegador bloquear, use Ctrl+P e salve como PDF.</div>
+      </div>
+
+      <div id="pdfArea" class="paper format-a4-portrait theme-boteco">
+        <div class="menu-cover">
+          <div class="brand-block">
+            <p class="eyebrow">Menu oficial</p>
+            <h2 id="previewRestaurantName">Casteluche</h2>
+            <p id="previewTagline">Refeições, porções, lanches, drinks e bebidas</p>
+          </div>
+          <div class="contact-block">
+            <span id="previewWhatsapp">(11) 93231-1331</span>
+            <span id="previewInstagram">@castelucheshow</span>
+            <span id="previewAddress">Av. Manuel Sabino de Oliveira, 3900</span>
+          </div>
+        </div>
+        <div id="menuPreview" class="menu-preview"></div>
+        <footer class="menu-footer">
+          <span>Valores sujeitos à alteração.</span>
+          <span>Gerado no Gerador de Cardápio Casteluche.</span>
+        </footer>
+      </div>
+    </section>
+  </main>
+
+  <template id="editorItemTemplate">
+    <article class="editor-card">
+      <div class="editor-card-header">
+        <strong data-field="product"></strong>
+        <button class="icon-btn" data-action="delete" title="Excluir item">×</button>
+      </div>
+      <div class="editor-grid">
+        <label>Produto<input data-input="product" type="text" /></label>
+        <label>Preço<input data-input="price" type="text" /></label>
+        <label>Categoria<input data-input="category" type="text" /></label>
+        <label>Seção<input data-input="section" type="text" /></label>
+        <label>Opção<input data-input="option" type="text" /></label>
+        <label>Volume<input data-input="volume" type="text" /></label>
+        <label>Serve<input data-input="serve" type="text" /></label>
+        <label>Disponibilidade<input data-input="availability" type="text" /></label>
+      </div>
+      <label>Descrição<textarea data-input="description" rows="2"></textarea></label>
+      <label>Observações<textarea data-input="notes" rows="2"></textarea></label>
+      <label>Imagem do item<input data-input="image" type="file" accept="image/*" /></label>
+    </article>
+  </template>
+</body>
+</html>
