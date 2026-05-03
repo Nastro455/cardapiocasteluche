@@ -81,7 +81,10 @@
           <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
           <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
-        <p class="panel-note">No modo <strong>Pasta A4</strong>, a exportação fica limitada a no máximo 9 páginas e usa um layout mais compacto para encaixar melhor na pasta física.</p>
+        <div class="mini-actions layout-actions">
+          <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout para pasta</button>
+        </div>
+        <p class="panel-note">No modo <strong>Pasta A4</strong>, a exportação fica limitada a no máximo 9 páginas e agrupa variações do mesmo produto, como P/M/G ou Individual/Casal/Família, para o layout não quebrar.</p>
       </section>
 
       <section class="panel">
@@ -93,8 +96,10 @@
         <select id="sectionFilter"></select>
         <div class="mini-actions">
           <button class="btn secondary" id="btnAddItem">+ Adicionar item</button>
+          <button class="btn warning" id="btnZeroCategory">Zerar valores da categoria</button>
           <button class="btn danger" id="btnReset">Restaurar base</button>
         </div>
+        <p class="panel-note">Para zerar valores, escolha uma categoria/seção no filtro acima. O botão define os preços como <strong>R$ 0,00</strong>.</p>
         <div id="editorList" class="editor-list"></div>
       </section>
     </aside>

@@ -11,6 +11,8 @@ Repositório estático para criar, editar e gerar PDF de cardápios para impress
 - Formatos livres: **A4 vertical**, **A4 horizontal**, **A5 vertical**, **Feed 4:5** e **Stories 9:16**.
 - Temas visuais: **Boteco premium**, **Clean claro** e **Escuro elegante**.
 - Botão **Gerar PDF** via navegador.
+- Botão **Organizar layout para pasta**, que agrupa variações do mesmo produto e ajusta o modo compacto.
+- Botão **Zerar valores da categoria**, para deixar todos os preços de uma seção como `R$ 0,00`.
 - Botão **Salvar no navegador**, **Exportar JSON** e **Importar JSON**.
 - Pronto para hospedar no **GitHub Pages**.
 
@@ -19,7 +21,7 @@ Repositório estático para criar, editar e gerar PDF de cardápios para impress
 Esse modo foi criado para cardápio físico em pasta/plástico A4.
 
 - Limita a exportação a no máximo **9 páginas**.
-- Usa layout compacto em duas colunas.
+- Usa layout compacto em duas colunas e agrupa variações do mesmo produto na mesma linha, como `Individual / Casal / Família` ou `P / M / G`.
 - Repete cabeçalho e rodapé em cada página.
 - Numera as páginas automaticamente.
 - Mantém o cardápio organizado para impressão.
@@ -61,6 +63,13 @@ casteluche-cardapio-generator/
 │   └── PROXIMOS_PASSOS.md
 └── .nojekyll
 ```
+
+
+## Novidades da versão 3
+
+- O preview da pasta A4 agora agrupa produtos repetidos com variações de preço, evitando que o mesmo prato apareça em várias linhas separadas.
+- O botão **Organizar layout para pasta** força o formato A4, densidade compacta, sem imagens e com descrições resumidas para o PDF não quebrar.
+- O botão **Zerar valores da categoria** usa o filtro de seção/categoria selecionado e define todos os preços daquela seção como `R$ 0,00`.
 
 ## Observação importante
 

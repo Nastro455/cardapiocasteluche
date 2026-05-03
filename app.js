@@ -1,8 +1,16 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v2-folder-9';
+const STORAGE_KEY = 'casteluche-menu-generator-v3-folder-9-organizado';
 const MAX_FOLDER_PAGES = 9;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
+
+const PRINT_SECTION_ORDER = [
+  'Feijoada', 'Pratos Principais', 'Pratos Nordestinos', 'Pratos Feitos', 'Adicionais',
+  'Porções', 'Lanches', 'Combo de Lanche', 'Sobremesas',
+  'Drinks sem álcool', 'Drinks', 'Dose de Gin', 'Gin', 'Vodka', 'Whisky', 'Copão', 'Combos', 'Extra',
+  'Cervejas Lata', 'Long Neck', 'Bebidas Quentes', 'Cachaça Casteluche', 'Licores Casteluche',
+  'Vinhos Casteluche', 'Coquetéis Casteluche', 'Águas', 'Refrigerantes', 'Energéticos', 'Sucos', 'Sucos Naturais'
+];
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -221,6 +229,62 @@ function groupBySection(items) {
   return sections.map(name => ({ name, items: map.get(name) }));
 }
 
+function sectionRank(sectionName) {
+  const index = PRINT_SECTION_ORDER.indexOf(sectionName || 'Sem seção');
+  return index === -1 ? 999 : index;
+}
+
+function orderItemsForPrint() {
+  state.items.sort((a, b) => {
+    const sectionDiff = sectionRank(a.section) - sectionRank(b.section);
+    if (sectionDiff !== 0) return sectionDiff;
+    return String(a.product || '').localeCompare(String(b.product || ''), 'pt-BR', { sensitivity: 'base' }) ||
+      String(a.option || a.volume || '').localeCompare(String(b.option || b.volume || ''), 'pt-BR', { sensitivity: 'base' });
+  });
+}
+
+function createFolderSections(items) {
+  const bySection = groupBySection(items).sort((a, b) => sectionRank(a.name) - sectionRank(b.name));
+  return bySection.map(section => ({
+    name: section.name,
+    items: groupItemsForFolder(section.items)
+  }));
+}
+
+function groupItemsForFolder(items) {
+  const map = new Map();
+  items.forEach(item => {
+    const key = [item.product || 'Sem nome', item.description || '', item.notes || ''].join('::');
+    if (!map.has(key)) {
+      map.set(key, {
+        id: item.id,
+        product: item.product || 'Sem nome',
+        description: item.description || '',
+        notes: item.notes || '',
+        image: item.image || '',
+        variants: [],
+        rawItems: []
+      });
+    }
+    const group = map.get(key);
+    if (!group.image && item.image) group.image = item.image;
+    group.rawItems.push(item);
+    group.variants.push({
+      label: buildVariantLabel(item),
+      price: item.price || '',
+      review: !item.price || String(item.price).toLowerCase().includes('revisar')
+    });
+  });
+  return Array.from(map.values()).sort((a, b) => String(a.product).localeCompare(String(b.product), 'pt-BR', { sensitivity: 'base' }));
+}
+
+function buildVariantLabel(item) {
+  const parts = [item.option, item.volume, item.serve, item.availability]
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+  return parts.join(' · ');
+}
+
 function renderPreview() {
   normalizeSettings();
   const paper = $('#pdfArea');
@@ -265,7 +329,7 @@ function renderFreePreview(paper) {
 function renderFolderPreview(paper) {
   const maxPages = clampPages(state.settings.maxPages || 9);
   paper.className = `paper menu-book format-folder-9-a4 theme-${state.settings.theme || 'boteco'} density-${state.settings.density || 'compact'}`;
-  const sections = groupBySection(filteredItems());
+  const sections = createFolderSections(filteredItems());
   const result = paginateSections(sections, maxPages);
   const pages = result.pages.length ? result.pages : [{ sections: [], weight: 0 }];
   paper.innerHTML = pages.map((page, index) => renderFolderPage(page, index + 1, maxPages, result.overflowCount)).join('');
@@ -277,23 +341,26 @@ function renderFolderPreview(paper) {
 }
 
 function sectionWeight(section) {
-  return 1.4 + section.items.reduce((total, item) => total + itemWeight(item), 0);
+  return 1.15 + section.items.reduce((total, item) => total + itemWeight(item), 0);
 }
 
 function itemWeight(item) {
   const descLength = String(item.description || '').length + String(item.notes || '').length;
-  let weight = 1;
-  if (descLength > 80) weight += 0.35;
-  if (descLength > 150) weight += 0.35;
-  if (item.option || item.volume || item.serve || item.availability) weight += 0.12;
+  const variantCount = Array.isArray(item.variants) ? item.variants.length : 1;
+  let weight = 0.85;
+  if (variantCount > 1) weight += Math.min(1.15, variantCount * 0.18);
+  if (descLength > 60) weight += 0.18;
+  if (descLength > 120) weight += 0.22;
+  if (descLength > 190) weight += 0.18;
   if (state.settings.showImages && item.image) weight += 0.35;
   return weight;
 }
 
 function pageCapacity(pageIndex) {
   const compact = (state.settings.density || 'compact') === 'compact';
-  if (compact) return pageIndex === 0 ? 30 : 32;
-  return pageIndex === 0 ? 22 : 24;
+  // Capacidade reduzida para evitar que a página visual caiba no preview mas quebre no PDF.
+  if (compact) return 24;
+  return pageIndex === 0 ? 18 : 20;
 }
 
 function paginateSections(sections, maxPages) {
@@ -401,20 +468,31 @@ function renderFolderSection(section) {
 }
 
 function renderFolderItem(item) {
-  const meta = onlyFilled([item.option, item.volume, item.serve, item.availability]);
+  const variants = Array.isArray(item.variants) && item.variants.length ? item.variants : [{ label: '', price: item.price || '', review: !item.price }];
+  const singleVariant = variants.length === 1;
+  const firstVariant = variants[0] || { label: '', price: '', review: true };
+  const meta = singleVariant ? firstVariant.label : '';
   const desc = state.settings.showDescriptions && item.description ? `<p class="folder-desc">${escapeHtml(item.description)}</p>` : '';
   const note = item.notes ? `<span class="folder-note">${escapeHtml(item.notes)}</span>` : '';
   const image = state.settings.showImages && item.image ? `<img class="folder-thumb" src="${item.image}" alt="${escapeHtml(item.product)}" />` : '';
-  const review = !item.price || String(item.price).toLowerCase().includes('revisar');
+  const variantList = !singleVariant ? `
+    <div class="folder-variants">
+      ${variants.map(variant => `
+        <span class="folder-variant ${variant.review ? 'review' : ''}">
+          <span>${escapeHtml(variant.label || 'Opção')}</span>
+          <b>${escapeHtml(variant.price || 'Revisar')}</b>
+        </span>`).join('')}
+    </div>` : '';
   return `
     <article class="folder-item ${image ? 'with-thumb' : ''}">
       ${image}
       <div class="folder-item-main">
         <div class="folder-item-top">
           <strong>${escapeHtml(item.product)}</strong>
-          <span class="folder-price ${review ? 'review' : ''}">${escapeHtml(item.price || 'Revisar')}</span>
+          ${singleVariant ? `<span class="folder-price ${firstVariant.review ? 'review' : ''}">${escapeHtml(firstVariant.price || 'Revisar')}</span>` : ''}
         </div>
         ${meta ? `<div class="folder-meta">${escapeHtml(meta)}</div>` : ''}
+        ${variantList}
         ${desc}
         ${note}
       </div>
@@ -467,6 +545,41 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
   }[char]));
+}
+
+function autoLayout() {
+  orderItemsForPrint();
+  state.settings.pageFormat = 'folder-9-a4';
+  state.settings.maxPages = 9;
+  state.settings.density = 'compact';
+  state.settings.showImages = false;
+  state.settings.showDescriptions = true;
+  state.settings.breakBySection = false;
+  activeSection = 'Todos';
+  searchTerm = '';
+  $('#searchInput').value = '';
+  renderAll();
+  toast('Layout organizado para pasta A4 em até 9 páginas.');
+}
+
+function zeroCategoryPrices() {
+  if (activeSection === 'Todos') {
+    alert('Escolha primeiro uma categoria/seção no filtro. Depois clique em “Zerar valores da categoria”.');
+    return;
+  }
+  const sectionName = activeSection;
+  const targets = state.items.filter(item => (item.section || 'Sem seção') === sectionName);
+  if (!targets.length) {
+    alert('Não encontrei itens nessa categoria.');
+    return;
+  }
+  if (!confirm(`Zerar os valores de ${targets.length} item(ns) em “${sectionName}”?`)) return;
+  targets.forEach(item => {
+    item.price = 'R$ 0,00';
+    item.priceValue = 0;
+  });
+  renderAll();
+  toast(`Valores zerados em “${sectionName}”.`);
 }
 
 function addItem() {
@@ -574,6 +687,8 @@ function bindValuesNoDuplicate() {
   $('#sectionFilter').addEventListener('change', event => { activeSection = event.target.value; renderEditor(); renderPreview(); });
   $('#searchInput').addEventListener('input', event => { searchTerm = event.target.value; renderEditor(); renderPreview(); });
   $('#btnAddItem').addEventListener('click', addItem);
+  $('#btnAutoLayout').addEventListener('click', autoLayout);
+  $('#btnZeroCategory').addEventListener('click', zeroCategoryPrices);
   $('#btnSave').addEventListener('click', saveData);
   $('#btnExport').addEventListener('click', exportJson);
   $('#btnReset').addEventListener('click', resetData);
