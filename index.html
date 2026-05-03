@@ -145,9 +145,31 @@
         <p class="panel-note">Agora você pode testar <strong>10 paletas</strong>, <strong>10 marcas d'água</strong> e ajustar a fonte em níveis seguros. O botão de organizar recalcula a distribuição para o modelo selecionado.</p>
       </section>
 
+
       <section class="panel">
         <div class="panel-title">
           <span>03</span>
+          <h2>Presets completos</h2>
+        </div>
+        <label>Presets salvos neste navegador
+          <select id="presetSelect">
+            <option value="">Nenhum preset salvo</option>
+          </select>
+        </label>
+        <div class="mini-actions preset-actions">
+          <button class="btn secondary" id="btnSavePreset" type="button">Salvar preset</button>
+          <button class="btn ghost" id="btnApplyPreset" type="button">Aplicar preset salvo</button>
+          <button class="btn ghost" id="btnExportPreset" type="button">Exportar preset</button>
+          <label class="btn ghost file-label" for="presetImport">Importar preset</label>
+          <input id="presetImport" type="file" accept="application/json,.json,.casteluche-preset" hidden />
+          <button class="btn danger" id="btnDeletePreset" type="button">Excluir preset</button>
+        </div>
+        <p class="panel-note">O preset guarda tudo: formato, paleta, marca d'água, fonte, logo, QR Code, imagens dos produtos, preços e descrições. O arquivo exportado pode ser levado para outro computador.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>04</span>
           <h2>Editar itens</h2>
         </div>
         <input id="searchInput" class="search" placeholder="Buscar produto, categoria ou preço..." />

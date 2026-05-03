@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v5-paletas-marca-dagua-fonte';
+const STORAGE_KEY = 'casteluche-menu-generator-v7-presets-completos';
+const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v7';
 const MAX_PAGES = 9;
 let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
@@ -148,6 +149,143 @@ function saveData() {
   normalizeSettings();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   toast('Cardápio salvo no navegador.');
+}
+
+function makePresetPayload(name = '') {
+  normalizeSettings();
+  return {
+    presetVersion: 1,
+    type: 'casteluche-menu-preset',
+    name: name || `Preset ${new Date().toLocaleString('pt-BR')}`,
+    createdAt: new Date().toISOString(),
+    data: structuredClone(state)
+  };
+}
+
+function readSavedPresets() {
+  try {
+    const saved = localStorage.getItem(PRESET_STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Não foi possível ler os presets salvos.', error);
+    return [];
+  }
+}
+
+function writeSavedPresets(presets) {
+  localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+}
+
+function renderPresetSelect() {
+  const select = $('#presetSelect');
+  if (!select) return;
+  const presets = readSavedPresets();
+  select.innerHTML = presets.length
+    ? presets.map(preset => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.name || 'Preset sem nome')}</option>`).join('')
+    : '<option value="">Nenhum preset salvo</option>';
+}
+
+function savePreset() {
+  const defaultName = `${state.restaurant?.name || 'Cardápio'} - ${new Date().toLocaleDateString('pt-BR')}`;
+  const name = prompt('Nome do preset:', defaultName);
+  if (!name) return;
+
+  const presets = readSavedPresets();
+  const payload = makePresetPayload(name.trim());
+  const existingIndex = presets.findIndex(preset => (preset.name || '').toLowerCase() === name.trim().toLowerCase());
+  const record = {
+    id: existingIndex >= 0 ? presets[existingIndex].id : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: payload.name,
+    updatedAt: payload.createdAt,
+    payload
+  };
+
+  if (existingIndex >= 0) {
+    if (!confirm(`Já existe um preset chamado “${name}”. Deseja substituir?`)) return;
+    presets[existingIndex] = record;
+  } else {
+    presets.unshift(record);
+  }
+
+  writeSavedPresets(presets);
+  renderPresetSelect();
+  toast('Preset salvo com configurações, produtos e imagens anexadas.');
+}
+
+function getSelectedPreset() {
+  const select = $('#presetSelect');
+  const id = select?.value;
+  if (!id) return null;
+  return readSavedPresets().find(preset => preset.id === id) || null;
+}
+
+function applyPresetPayload(payload) {
+  const data = payload?.data || payload;
+  if (!data || !Array.isArray(data.items)) throw new Error('Preset inválido: lista de itens ausente.');
+  state = data;
+  normalizeSettings();
+  activeSection = 'Todos';
+  searchTerm = '';
+  const search = $('#searchInput');
+  if (search) search.value = '';
+  renderAll();
+}
+
+function applySavedPreset() {
+  const preset = getSelectedPreset();
+  if (!preset) {
+    alert('Nenhum preset salvo selecionado.');
+    return;
+  }
+  if (!confirm(`Aplicar o preset “${preset.name}”? Isso substitui o cardápio atual na tela.`)) return;
+  try {
+    applyPresetPayload(preset.payload);
+    toast(`Preset “${preset.name}” aplicado.`);
+  } catch (error) {
+    console.error(error);
+    alert('Não consegui aplicar esse preset.');
+  }
+}
+
+function deleteSavedPreset() {
+  const preset = getSelectedPreset();
+  if (!preset) {
+    alert('Nenhum preset salvo selecionado.');
+    return;
+  }
+  if (!confirm(`Excluir o preset “${preset.name}”?`)) return;
+  writeSavedPresets(readSavedPresets().filter(item => item.id !== preset.id));
+  renderPresetSelect();
+  toast('Preset excluído.');
+}
+
+function exportPreset() {
+  const payload = makePresetPayload(state.restaurant?.name || 'Preset Casteluche');
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = (payload.name || 'preset-cardapio').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  a.href = url;
+  a.download = `${safeName || 'preset-cardapio'}.casteluche-preset.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Preset exportado com configurações e imagens anexadas.');
+}
+
+function importPreset(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      applyPresetPayload(imported);
+      toast('Preset importado com configurações e imagens anexadas.');
+    } catch (error) {
+      console.error(error);
+      alert('Não consegui importar esse preset. Confira se o arquivo é um preset exportado pela ferramenta.');
+    }
+  };
+  reader.readAsText(file);
 }
 
 function toast(message) {
@@ -897,13 +1035,19 @@ function renderAll() {
     $('#btnZeroCategory').addEventListener('click', zeroCategoryPrices);
     $('#btnSave').addEventListener('click', saveData);
     $('#btnExport').addEventListener('click', exportJson);
+    $('#btnSavePreset').addEventListener('click', savePreset);
+    $('#btnApplyPreset').addEventListener('click', applySavedPreset);
+    $('#btnDeletePreset').addEventListener('click', deleteSavedPreset);
+    $('#btnExportPreset').addEventListener('click', exportPreset);
+    $('#presetImport').addEventListener('change', event => { if (event.target.files?.[0]) importPreset(event.target.files[0]); event.target.value = ''; });
     $('#btnReset').addEventListener('click', resetData);
     $('#btnPdf').addEventListener('click', generatePdf);
-    $('#jsonImport').addEventListener('change', event => { if (event.target.files?.[0]) importJson(event.target.files[0]); });
+    $('#jsonImport').addEventListener('change', event => { if (event.target.files?.[0]) importJson(event.target.files[0]); event.target.value = ''; });
     isBound = true;
   } else {
     setControlValues();
   }
+  renderPresetSelect();
   renderEditor();
   renderPreview();
 }
