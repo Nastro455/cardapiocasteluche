@@ -57,6 +57,12 @@
         <div class="checks">
           <label><input id="showQrCode" type="checkbox" /> Mostrar QR Code no cabeçalho</label>
         </div>
+        <label>Escala do logo no cabeçalho
+          <div class="range-stack">
+            <input id="logoScale" type="range" min="60" max="170" step="5" value="100" />
+            <span id="logoScaleLabel" class="range-value">100%</span>
+          </div>
+        </label>
         <div class="mini-actions">
           <button class="btn ghost" id="btnClearLogo" type="button">Remover logo</button>
           <button class="btn ghost" id="btnClearQr" type="button">Remover QR</button>
@@ -148,10 +154,10 @@
         <select id="sectionFilter"></select>
         <div class="mini-actions">
           <button class="btn secondary" id="btnAddItem">+ Adicionar item</button>
-          <button class="btn warning" id="btnZeroCategory">Zerar valores da categoria</button>
+          <button class="btn warning" id="btnZeroCategory">Limpar valores da categoria</button>
           <button class="btn danger" id="btnReset">Restaurar base</button>
         </div>
-        <p class="panel-note">Quando os valores forem zerados, o preço não aparece como <strong>R$ 0,00</strong>. O cardápio exibe apenas o <strong>balão branco vazio</strong> para você preencher depois.</p>
+        <p class="panel-note">Quando os valores forem limpos, o preço não aparece como <strong>R$ 0,00</strong>. O cardápio exibe apenas o <strong>balão branco vazio</strong> para você preencher depois.</p>
         <div id="editorList" class="editor-list"></div>
       </section>
     </aside>

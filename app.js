@@ -87,6 +87,7 @@ function normalizeSettings() {
     maxPages: 9,
     headerBrandMode: 'text',
     showQrCode: false,
+    logoScale: 100,
     watermark: 'none',
     fontScale: 100,
     ...(state.settings || {})
@@ -98,6 +99,7 @@ function normalizeSettings() {
   if (!['text', 'logo'].includes(state.settings.headerBrandMode)) state.settings.headerBrandMode = 'text';
   state.settings.maxPages = clampPages(state.settings.maxPages);
   state.settings.fontScale = clampFontScale(state.settings.fontScale);
+  state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.items = Array.isArray(state.items) ? state.items : [];
 }
 
@@ -111,6 +113,12 @@ function clampFontScale(value) {
   const parsed = Number(value || 100);
   const nearest = FONT_SCALE_OPTIONS.reduce((prev, current) => Math.abs(current - parsed) < Math.abs(prev - parsed) ? current : prev, 100);
   return nearest;
+}
+
+function clampLogoScale(value) {
+  const parsed = Number(value || 100);
+  if (Number.isNaN(parsed)) return 100;
+  return Math.max(60, Math.min(170, Math.round(parsed)));
 }
 
 function getCurrentConfig() {
@@ -217,6 +225,7 @@ function setControlValues() {
     densitySelect: state.settings.density,
     watermarkSelect: state.settings.watermark,
     fontScale: state.settings.fontScale,
+    logoScale: state.settings.logoScale,
     maxPages: state.settings.maxPages,
     headerBrandMode: state.settings.headerBrandMode
   };
@@ -230,6 +239,8 @@ function setControlValues() {
   $('#showQrCode').checked = state.settings.showQrCode === true;
   const fontScaleLabel = $('#fontScaleLabel');
   if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
+  const logoScaleLabel = $('#logoScaleLabel');
+  if (logoScaleLabel) logoScaleLabel.textContent = `${state.settings.logoScale}%`;
 }
 
 function bindSettings() {
@@ -312,6 +323,12 @@ function bindSettings() {
     state.settings.fontScale = clampFontScale(event.target.value);
     event.target.value = state.settings.fontScale;
     $('#fontScaleLabel').textContent = `${state.settings.fontScale}%`;
+    renderPreview();
+  });
+  $('#logoScale').addEventListener('input', event => {
+    state.settings.logoScale = clampLogoScale(event.target.value);
+    event.target.value = state.settings.logoScale;
+    $('#logoScaleLabel').textContent = `${state.settings.logoScale}%`;
     renderPreview();
   });
   $('#maxPages').addEventListener('input', event => {
@@ -548,6 +565,7 @@ function applyPaperVariables(paper) {
   paper.style.setProperty('--page-h', `${config.heightPx}px`);
   paper.style.setProperty('--folder-columns', config.columns);
   paper.style.setProperty('--font-scale', `${state.settings.fontScale / 100}`);
+  paper.style.setProperty('--logo-scale', `${state.settings.logoScale / 100}`);
   paper.style.setProperty('--paper-bg', palette.paper);
   paper.style.setProperty('--ink', palette.ink);
   paper.style.setProperty('--muted', palette.muted);
@@ -587,6 +605,7 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config) {
     : '';
   return `
     <article class="menu-page" data-page="${pageNumber}">
+      ${renderWatermark()}
       ${renderPageHeader(pageNumber, totalPages)}
       <main class="folder-body">
         ${overflowWarning}
@@ -598,6 +617,12 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config) {
       </footer>
     </article>
   `;
+}
+
+function renderWatermark() {
+  const entry = WATERMARKS[state.settings.watermark] || WATERMARKS.none;
+  if (!entry.svg) return '';
+  return `<div class="page-watermark" aria-hidden="true">${entry.svg.replaceAll('%23', '#')}</div>`;
 }
 
 function renderPageHeader(pageNumber, totalPages) {
@@ -721,23 +746,30 @@ function autoLayout() {
 }
 
 function zeroCategoryPrices() {
-  if (activeSection === 'Todos') {
-    alert('Escolha primeiro uma categoria/seção no filtro. Depois clique em “Zerar valores da categoria”.');
-    return;
-  }
-  const targets = state.items.filter(item => (item.section || 'Sem seção') === activeSection);
+  const isAll = activeSection === 'Todos';
+  const targets = isAll
+    ? state.items
+    : state.items.filter(item => (item.section || 'Sem seção') === activeSection);
+
   if (!targets.length) {
-    alert('Não encontrei itens nessa categoria.');
+    alert('Não encontrei itens para limpar.');
     return;
   }
-  if (!confirm(`Limpar os preços de ${targets.length} item(ns) em “${activeSection}”?`)) return;
+
+  const message = isAll
+    ? `Você está em “Todos”. Tem certeza que deseja limpar os preços de TODOS os ${targets.length} itens do cardápio?`
+    : `Limpar os preços de ${targets.length} item(ns) em “${activeSection}”?`;
+
+  if (!confirm(message)) return;
+
   targets.forEach(item => {
     item.price = '';
     item.priceValue = null;
     item.priceBlank = true;
   });
+
   renderAll();
-  toast(`Preços limpos em “${activeSection}”. O balão continua branco e vazio.`);
+  toast(isAll ? 'Todos os preços foram limpos. Os balões ficaram vazios.' : `Preços limpos em “${activeSection}”. O balão continua branco e vazio.`);
 }
 
 function addItem() {
