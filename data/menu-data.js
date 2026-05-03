@@ -10,11 +10,12 @@ window.MENU_DATA = {
   },
   "settings": {
     "theme": "boteco",
-    "pageFormat": "a4-portrait",
-    "density": "normal",
-    "showImages": true,
+    "pageFormat": "folder-9-a4",
+    "density": "compact",
+    "showImages": false,
     "showDescriptions": true,
-    "breakBySection": true
+    "breakBySection": false,
+    "maxPages": 9
   },
   "categoryOrder": [
     "Refeições",

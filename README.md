@@ -4,14 +4,27 @@ Repositório estático para criar, editar e gerar PDF de cardápios para impress
 
 ## O que já vem pronto
 
-- Base com **201 itens** importados da planilha.
+- Base com os itens importados da planilha.
 - Editor de produtos, preços, categorias, descrições e observações.
 - Upload local de imagem por item.
-- Formatos de saída: **A4 vertical**, **A4 horizontal**, **A5 vertical**, **Feed 4:5** e **Stories 9:16**.
+- Formato principal: **Pasta A4 — até 9 páginas**.
+- Formatos livres: **A4 vertical**, **A4 horizontal**, **A5 vertical**, **Feed 4:5** e **Stories 9:16**.
 - Temas visuais: **Boteco premium**, **Clean claro** e **Escuro elegante**.
 - Botão **Gerar PDF** via navegador.
 - Botão **Salvar no navegador**, **Exportar JSON** e **Importar JSON**.
 - Pronto para hospedar no **GitHub Pages**.
+
+## Modo Pasta A4 — até 9 páginas
+
+Esse modo foi criado para cardápio físico em pasta/plástico A4.
+
+- Limita a exportação a no máximo **9 páginas**.
+- Usa layout compacto em duas colunas.
+- Repete cabeçalho e rodapé em cada página.
+- Numera as páginas automaticamente.
+- Mantém o cardápio organizado para impressão.
+
+Se passar de 9 páginas, a ferramenta tenta concentrar o excesso na última página e mostra um aviso. Para melhorar o encaixe, reduza descrições longas, desative imagens ou separe o cardápio em PDFs por categoria.
 
 ## Como publicar no GitHub Pages
 
@@ -44,11 +57,11 @@ casteluche-cardapio-generator/
 │   └── menu.json
 ├── assets/
 │   └── README.md
+├── docs/
+│   └── PROXIMOS_PASSOS.md
 └── .nojekyll
 ```
 
 ## Observação importante
 
-O GitHub Pages é hospedagem estática. Ele não salva dados em banco de dados. Nesta versão, as alterações são salvas no próprio navegador usando `localStorage` e também podem ser exportadas/importadas via JSON.
-
-Para virar uma plataforma com login para vários clientes, o próximo passo é integrar com Firebase ou Supabase.
+Essa versão salva alterações no próprio navegador. Para transformar em uma plataforma com login, múltiplos clientes e banco de dados, o próximo passo é integrar com Firebase ou Supabase.

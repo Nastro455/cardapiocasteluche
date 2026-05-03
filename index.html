@@ -49,9 +49,10 @@
         <div class="grid-2">
           <label>Formato
             <select id="pageFormat">
-              <option value="a4-portrait">A4 vertical</option>
-              <option value="a4-landscape">A4 horizontal</option>
-              <option value="a5-portrait">A5 vertical</option>
+              <option value="folder-9-a4">Pasta A4 — até 9 páginas</option>
+              <option value="a4-portrait">A4 vertical livre</option>
+              <option value="a4-landscape">A4 horizontal livre</option>
+              <option value="a5-portrait">A5 vertical livre</option>
               <option value="feed-4x5">Feed 4:5</option>
               <option value="story-9x16">Stories 9:16</option>
             </select>
@@ -64,11 +65,23 @@
             </select>
           </label>
         </div>
+        <div class="grid-2">
+          <label>Limite da pasta
+            <input id="maxPages" type="number" min="1" max="9" value="9" />
+          </label>
+          <label>Densidade
+            <select id="densitySelect">
+              <option value="compact">Compacta</option>
+              <option value="normal">Normal</option>
+            </select>
+          </label>
+        </div>
         <div class="checks">
           <label><input id="showDescriptions" type="checkbox" /> Mostrar descrições</label>
           <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
           <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
+        <p class="panel-note">No modo <strong>Pasta A4</strong>, a exportação fica limitada a no máximo 9 páginas e usa um layout mais compacto para encaixar melhor na pasta física.</p>
       </section>
 
       <section class="panel">
@@ -91,6 +104,7 @@
         <div>
           <strong>Preview</strong>
           <span id="itemCount"></span>
+          <span id="pageInfo" class="page-info"></span>
         </div>
         <div class="hint">Para PDF: clique em “Gerar PDF”. Se o navegador bloquear, use Ctrl+P e salve como PDF.</div>
       </div>
