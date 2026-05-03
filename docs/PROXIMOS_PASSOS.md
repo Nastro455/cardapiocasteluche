@@ -18,3 +18,19 @@
 - Galeria de fotos dos pratos.
 - Modelos premium para impressão.
 - Link público do cardápio atualizado automaticamente.
+
+
+## Ajustes de layout incluídos
+
+- Usar o botão **Organizar layout para pasta** antes de gerar o PDF final.
+- Para criar uma versão sem preços por seção, escolha a seção no filtro e clique em **Zerar valores da categoria**.
+- O modo Pasta A4 agrupa variações iguais para reduzir quebra visual.
+
+
+## V4 - Ajustes implementados
+
+- Organização de layout para qualquer modelo selecionado.
+- Exportação de PDF página por página, para evitar páginas brancas.
+- Opção de cabeçalho com logo da casa ou texto do restaurante.
+- Opção de QR Code no cabeçalho para cardápio virtual.
+- Limite de páginas mantido em até 9 páginas.

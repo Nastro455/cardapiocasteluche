@@ -7,6 +7,8 @@
   <meta name="description" content="Ferramenta estática para editar, visualizar e gerar PDF de cardápios para impressão." />
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script defer src="data/menu-data.js"></script>
   <script defer src="app.js"></script>
@@ -39,6 +41,26 @@
         <label>Instagram<input id="restaurantInstagram" type="text" /></label>
         <label>Endereço<input id="restaurantAddress" type="text" /></label>
         <label>Frase curta<input id="restaurantTagline" type="text" /></label>
+        <div class="grid-2">
+          <label>Cabeçalho
+            <select id="headerBrandMode">
+              <option value="text">Usar texto do restaurante</option>
+              <option value="logo">Usar logo da casa</option>
+            </select>
+          </label>
+          <label>Logo da casa<input id="logoUpload" type="file" accept="image/*" /></label>
+        </div>
+        <div class="grid-2">
+          <label>QR Code do cardápio virtual<input id="qrUpload" type="file" accept="image/*" /></label>
+          <label>Legenda do QR Code<input id="qrLabel" type="text" placeholder="Cardápio virtual" /></label>
+        </div>
+        <div class="checks">
+          <label><input id="showQrCode" type="checkbox" /> Mostrar QR Code no cabeçalho</label>
+        </div>
+        <div class="mini-actions">
+          <button class="btn ghost" id="btnClearLogo" type="button">Remover logo</button>
+          <button class="btn ghost" id="btnClearQr" type="button">Remover QR</button>
+        </div>
       </section>
 
       <section class="panel">
@@ -66,7 +88,7 @@
           </label>
         </div>
         <div class="grid-2">
-          <label>Limite da pasta
+          <label>Limite de páginas
             <input id="maxPages" type="number" min="1" max="9" value="9" />
           </label>
           <label>Densidade
@@ -82,9 +104,9 @@
           <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
         <div class="mini-actions layout-actions">
-          <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout para pasta</button>
+          <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">No modo <strong>Pasta A4</strong>, a exportação fica limitada a no máximo 9 páginas e agrupa variações do mesmo produto, como P/M/G ou Individual/Casal/Família, para o layout não quebrar.</p>
+        <p class="panel-note">A organização agora vale para o <strong>modelo selecionado</strong>. Ela compacta, pagina e agrupa variações para evitar informações quebradas e páginas brancas no PDF.</p>
       </section>
 
       <section class="panel">
