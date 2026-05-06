@@ -46,3 +46,9 @@ O campo **Limite de páginas** não fica mais travado em 9. O padrão continua s
 - Opções adicionadas: **A4 vertical — 2 páginas**, **A4 horizontal — 2 páginas** e **A3 horizontal — 2 páginas**.
 - Ao escolher um desses formatos, o campo de limite de páginas fica travado em 2, porque o objetivo é imprimir frente e verso.
 - O botão **Organizar layout selecionado** passa a compactar automaticamente o conteúdo para tentar caber nas duas páginas.
+
+## V18 - Edição da foto de preenchimento
+
+- A foto de preenchimento agora pode ser reposicionada com clique e arraste no preview.
+- Cada página guarda sua própria posição e escala de foto.
+- Use a opção **Modo editar foto** dentro de **Diagramação por página**.

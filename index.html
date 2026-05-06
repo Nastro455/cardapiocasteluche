@@ -195,14 +195,25 @@
           <label>Foto para preencher espaço em branco
             <input id="pageFillImageUpload" type="file" accept="image/*" />
           </label>
+          <div class="checks fill-edit-check">
+            <label><input id="editFillImageMode" type="checkbox" /> Modo editar foto: clique e arraste no preview</label>
+          </div>
+          <label>Escala da foto de preenchimento
+            <div class="range-stack">
+              <input id="pageFillScale" type="range" min="70" max="220" step="5" value="100" />
+              <span id="pageFillScaleLabel" class="range-value">100%</span>
+            </div>
+          </label>
           <div class="mini-actions">
+            <button class="btn ghost" id="btnResetFillPosition" type="button">Centralizar foto</button>
             <button class="btn ghost" id="btnClearFillImage" type="button">Remover foto desta página</button>
           </div>
+          <p class="panel-note small-note">Com o modo editar ativado, segure o mouse sobre a foto no preview e arraste para ajustar o enquadramento da imagem dentro do espaço.</p>
         </div>
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">Além das paletas e marcas d'água, agora cada página pode ter um layout próprio. A ferramenta tenta manter cada categoria inteira na mesma página e a foto de preenchimento ajuda a evitar espaços em branco.</p>
+        <p class="panel-note">Além das paletas e marcas d'água, cada página pode ter um layout próprio. Clique no balão/título de uma categoria no preview para escolher se ela fica na página de cima, de baixo ou em uma página específica.</p>
       </section>
 
 

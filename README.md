@@ -131,3 +131,11 @@ O botão **Exportar cardápio público** continua disponível para gerar um HTML
 - Opções adicionadas: **A4 vertical — 2 páginas**, **A4 horizontal — 2 páginas** e **A3 horizontal — 2 páginas**.
 - Ao escolher um desses formatos, o campo de limite de páginas fica travado em 2, porque o objetivo é imprimir frente e verso.
 - O botão **Organizar layout selecionado** passa a compactar automaticamente o conteúdo para tentar caber nas duas páginas.
+
+## Atualização V18
+
+- Adicionado modo de edição da foto de preenchimento da página.
+- Ao ativar **Modo editar foto**, o operador pode clicar e segurar a imagem no preview para ajustar o enquadramento dentro do espaço disponível.
+- Adicionado controle de escala da foto de preenchimento por página.
+- Adicionado botão **Centralizar foto** para restaurar posição e escala da imagem da página selecionada.
+- A marcação de edição não aparece no PDF nem no cardápio público exportado.

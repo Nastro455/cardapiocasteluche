@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v16-layouts-sem-branco';
+const STORAGE_KEY = 'casteluche-menu-generator-v18-edicao-imagem-pagina';
 const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v16';
 const DEFAULT_MAX_PAGES = 9;
 const MAX_ALLOWED_PAGES = 99;
@@ -6,6 +6,7 @@ let state = structuredClone(window.MENU_DATA || {});
 let activeSection = 'Todos';
 let searchTerm = '';
 let isBound = false;
+let fillImageDrag = null;
 
 const PRINT_SECTION_ORDER = [
   'Embalagem', 'Prato Feito Individual', 'Comercial Individual', 'Cardápio Semanal',
@@ -202,6 +203,10 @@ function normalizeSettings() {
     fontScale: 100,
     pageLayouts: {},
     pageFillImages: {},
+    pageFillImagePositions: {},
+    pageFillImageScales: {},
+    editFillImageMode: false,
+    manualSectionPages: {},
     ...(state.settings || {})
   };
   if (!FORMAT_CONFIGS[state.settings.pageFormat]) state.settings.pageFormat = 'folder-9-a4';
@@ -216,6 +221,10 @@ function normalizeSettings() {
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
   state.settings.pageLayouts = state.settings.pageLayouts && typeof state.settings.pageLayouts === 'object' ? state.settings.pageLayouts : {};
   state.settings.pageFillImages = state.settings.pageFillImages && typeof state.settings.pageFillImages === 'object' ? state.settings.pageFillImages : {};
+  state.settings.pageFillImagePositions = state.settings.pageFillImagePositions && typeof state.settings.pageFillImagePositions === 'object' ? state.settings.pageFillImagePositions : {};
+  state.settings.pageFillImageScales = state.settings.pageFillImageScales && typeof state.settings.pageFillImageScales === 'object' ? state.settings.pageFillImageScales : {};
+  state.settings.editFillImageMode = state.settings.editFillImageMode === true;
+  state.settings.manualSectionPages = state.settings.manualSectionPages && typeof state.settings.manualSectionPages === 'object' ? state.settings.manualSectionPages : {};
   const currentFormat = FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
   if (currentFormat.fixedMaxPages) state.settings.maxPages = currentFormat.fixedMaxPages;
   state.items = Array.isArray(state.items) ? state.items : [];
@@ -244,6 +253,18 @@ function clampImageScale(value) {
   const parsed = Number(value || 100);
   if (Number.isNaN(parsed)) return 100;
   return Math.max(60, Math.min(160, Math.round(parsed)));
+}
+
+function clampFillImageScale(value) {
+  const parsed = Number(value || 100);
+  if (Number.isNaN(parsed)) return 100;
+  return Math.max(70, Math.min(220, Math.round(parsed)));
+}
+
+function clampPercent(value, fallback = 50) {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) return fallback;
+  return Math.max(0, Math.min(100, parsed));
 }
 
 function getCurrentConfig() {
@@ -278,12 +299,120 @@ function getResolvedPageLayout(page, pageNumber) {
   return 'classic';
 }
 
+
+function getSectionPageKey(sectionName) {
+  return `${state.menuType || 'especial'}::${sectionName || 'Sem seção'}`;
+}
+
+function getManualSectionPage(sectionName) {
+  const key = getSectionPageKey(sectionName);
+  const value = Number(state.settings.manualSectionPages?.[key]);
+  if (!value || Number.isNaN(value)) return null;
+  return Math.max(1, Math.min(getMaxPagesForCurrentFormat(), Math.round(value)));
+}
+
+function setManualSectionPage(sectionName, pageNumber) {
+  const key = getSectionPageKey(sectionName);
+  const max = getMaxPagesForCurrentFormat();
+  const page = Math.max(1, Math.min(max, Math.round(Number(pageNumber) || 1)));
+  state.settings.manualSectionPages[key] = page;
+}
+
+function clearManualSectionPage(sectionName) {
+  const key = getSectionPageKey(sectionName);
+  delete state.settings.manualSectionPages[key];
+}
+
+function ensurePage(pages, index) {
+  while (pages.length <= index) pages.push({ sections: [], weight: 0 });
+  pages[index] = pages[index] || { sections: [], weight: 0 };
+  return pages[index];
+}
+
+function applyManualSectionPageOverrides(pages, maxPages) {
+  const moves = [];
+  pages.forEach((page, pageIndex) => {
+    page.sections = (page.sections || []).filter(section => {
+      const target = getManualSectionPage(section.name);
+      if (!target || target === pageIndex + 1) return true;
+      moves.push({ section, target: Math.max(1, Math.min(maxPages, target)) });
+      return false;
+    });
+  });
+
+  moves.forEach(({ section, target }) => {
+    const targetPage = ensurePage(pages, target - 1);
+    targetPage.sections.push(section);
+  });
+
+  while (pages.length > 1 && !pages[pages.length - 1].sections.length) pages.pop();
+  return pages;
+}
+
+function openSectionPageMenu(sectionName, currentPage, event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  $('.category-page-popover')?.remove();
+
+  const max = getMaxPagesForCurrentFormat();
+  const rect = event?.currentTarget?.getBoundingClientRect?.() || { left: 24, top: 120, bottom: 150 };
+  const popover = document.createElement('div');
+  popover.className = 'category-page-popover no-print';
+  popover.style.left = `${Math.min(window.innerWidth - 280, Math.max(16, rect.left))}px`;
+  popover.style.top = `${Math.min(window.innerHeight - 220, Math.max(16, rect.bottom + 8))}px`;
+  popover.innerHTML = `
+    <strong>${escapeHtml(sectionName)}</strong>
+    <span>Escolha em qual página esta categoria deve ficar.</span>
+    <div class="popover-actions">
+      <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
+      <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
+      <button type="button" data-action="choose">Escolher página</button>
+      <button type="button" data-action="auto">Automático</button>
+    </div>
+  `;
+  document.body.appendChild(popover);
+
+  popover.addEventListener('click', e => {
+    const button = e.target.closest('button[data-action]');
+    if (!button || button.disabled) return;
+    const action = button.dataset.action;
+    if (action === 'up') setManualSectionPage(sectionName, currentPage - 1);
+    if (action === 'down') setManualSectionPage(sectionName, currentPage + 1);
+    if (action === 'choose') {
+      const answer = prompt(`Enviar “${sectionName}” para qual página?\nDigite um número entre 1 e ${max}.`, String(currentPage));
+      if (answer === null) return;
+      setManualSectionPage(sectionName, answer);
+    }
+    if (action === 'auto') clearManualSectionPage(sectionName);
+    popover.remove();
+    renderPreview();
+    toast('Posição da categoria atualizada.');
+  });
+
+  setTimeout(() => {
+    const close = closeEvent => {
+      if (!popover.contains(closeEvent.target)) {
+        popover.remove();
+        document.removeEventListener('click', close);
+      }
+    };
+    document.addEventListener('click', close);
+  }, 0);
+}
+
 function updatePageLayoutControls() {
   const page = String(getLayoutPageNumber());
   const select = $('#pageLayoutSelect');
   if (select) select.value = getPageLayout(page);
   const upload = $('#pageFillImageUpload');
   if (upload) upload.title = state.settings.pageFillImages?.[page] ? 'Esta página já possui foto de preenchimento.' : 'Nenhuma foto aplicada nesta página.';
+  const editToggle = $('#editFillImageMode');
+  if (editToggle) editToggle.checked = state.settings.editFillImageMode === true;
+  const scaleInput = $('#pageFillScale');
+  const pageScale = clampFillImageScale(state.settings.pageFillImageScales?.[page] || 100);
+  if (scaleInput) scaleInput.value = pageScale;
+  const scaleLabel = $('#pageFillScaleLabel');
+  if (scaleLabel) scaleLabel.textContent = `${pageScale}%`;
 }
 
 function updateMaxPagesControlState() {
@@ -737,8 +866,35 @@ function bindSettings() {
   $('#btnClearFillImage').addEventListener('click', () => {
     const page = String(getLayoutPageNumber());
     delete state.settings.pageFillImages[page];
+    delete state.settings.pageFillImagePositions[page];
+    delete state.settings.pageFillImageScales[page];
+    updatePageLayoutControls();
     renderPreview();
     toast(`Foto de preenchimento removida da página ${page}.`);
+  });
+
+  $('#editFillImageMode')?.addEventListener('change', event => {
+    state.settings.editFillImageMode = event.target.checked;
+    renderPreview();
+    toast(event.target.checked ? 'Modo edição de foto ativado. Clique e arraste a foto no preview.' : 'Modo edição de foto desativado.');
+  });
+
+  $('#pageFillScale')?.addEventListener('input', event => {
+    const page = String(getLayoutPageNumber());
+    const value = clampFillImageScale(event.target.value);
+    state.settings.pageFillImageScales[page] = value;
+    event.target.value = value;
+    $('#pageFillScaleLabel').textContent = `${value}%`;
+    applyFillImageVisual(page);
+  });
+
+  $('#btnResetFillPosition')?.addEventListener('click', () => {
+    const page = String(getLayoutPageNumber());
+    state.settings.pageFillImagePositions[page] = { x: 50, y: 50 };
+    state.settings.pageFillImageScales[page] = 100;
+    updatePageLayoutControls();
+    applyFillImageVisual(page);
+    toast(`Posição e escala da foto da página ${page} restauradas.`);
   });
 }
 
@@ -932,7 +1088,8 @@ function paginateSections(sections, maxPages, config) {
     pages[pageIndex].weight += weight;
   });
 
-  return { pages: pages.filter(page => page.sections.length), overflowCount };
+  const arrangedPages = applyManualSectionPageOverrides(pages, maxPages);
+  return { pages: arrangedPages.length ? arrangedPages : [{ sections: [], weight: 0 }], overflowCount };
 }
 
 function applyPaperVariables(paper) {
@@ -990,7 +1147,7 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, men
       <main class="folder-body">
         ${state.settings.showDigitalMenu && pageNumber === 1 ? renderDigitalMenu(menuSections) : ''}
         ${overflowWarning}
-        ${page.sections.length ? page.sections.map(renderFolderSection).join('') : '<div class="empty-page">Espaço reservado para novos itens.</div>'}
+        ${page.sections.length ? page.sections.map(section => renderFolderSection(section, pageNumber)).join('') : '<div class="empty-page">Espaço reservado para novos itens.</div>'}
         ${renderPageFiller(pageNumber)}
       </main>
       <footer class="folder-footer">
@@ -1079,13 +1236,18 @@ function renderDigitalMenu(sectionNames = []) {
   `;
 }
 
-function renderFolderSection(section) {
+function renderFolderSection(section, pageNumber = 1) {
   const idAttr = ` id="cat-${slugify(section.name)}"`;
   const count = section.items?.length || 0;
   const sizeClass = count > 28 ? 'fit-xlarge' : count > 18 ? 'fit-large' : count > 10 ? 'fit-medium' : 'fit-small';
+  const manualPage = getManualSectionPage(section.name);
+  const manualBadge = manualPage ? `<span class="manual-page-badge">Pág. ${manualPage}</span>` : '';
   return `
-    <section class="folder-section ${sizeClass}${section.forceFit ? ' force-fit' : ''}"${idAttr}>
-      <h3>${escapeHtml(section.name)}</h3>
+    <section class="folder-section ${sizeClass}${section.forceFit ? ' force-fit' : ''}${manualPage ? ' manually-positioned' : ''}"${idAttr}>
+      <h3 class="category-handle" data-section-name="${escapeHtml(section.name)}" data-current-page="${pageNumber}" title="Clique para mover esta categoria para a página de cima ou de baixo">
+        <span>${escapeHtml(section.name)}</span>
+        ${manualBadge}
+      </h3>
       <div class="folder-grid">
         ${section.items.map(renderFolderItem).join('')}
       </div>
@@ -1093,11 +1255,20 @@ function renderFolderSection(section) {
   `;
 }
 
+function getFillImagePosition(pageNumber) {
+  const saved = state.settings.pageFillImagePositions?.[String(pageNumber)] || {};
+  return { x: clampPercent(saved.x, 50), y: clampPercent(saved.y, 50) };
+}
+
 function renderPageFiller(pageNumber) {
-  const image = state.settings.pageFillImages?.[String(pageNumber)];
+  const pageKey = String(pageNumber);
+  const image = state.settings.pageFillImages?.[pageKey];
   if (!image) return '';
+  const position = getFillImagePosition(pageKey);
+  const scale = clampFillImageScale(state.settings.pageFillImageScales?.[pageKey] || 100) / 100;
+  const editableClass = state.settings.editFillImageMode ? ' editable' : '';
   return `
-    <div class="page-filler-photo" aria-label="Foto para preencher espaço em branco">
+    <div class="page-filler-photo${editableClass}" data-page="${pageKey}" aria-label="Foto para preencher espaço em branco" style="--fill-x:${position.x}%; --fill-y:${position.y}%; --fill-scale:${scale};">
       <img src="${image}" alt="Foto de preenchimento da página ${pageNumber}" />
     </div>
   `;
@@ -1439,13 +1610,15 @@ function exportPublicCardapio() {
   const previous = {
     activeSection,
     searchTerm,
-    showDigitalMenu: state.settings.showDigitalMenu
+    showDigitalMenu: state.settings.showDigitalMenu,
+    editFillImageMode: state.settings.editFillImageMode
   };
 
   try {
     activeSection = 'Todos';
     searchTerm = '';
     state.settings.showDigitalMenu = true;
+    state.settings.editFillImageMode = false;
     renderPreview();
 
     const paper = $('#pdfArea');
@@ -1465,6 +1638,7 @@ function exportPublicCardapio() {
     activeSection = previous.activeSection;
     searchTerm = previous.searchTerm;
     state.settings.showDigitalMenu = previous.showDigitalMenu;
+    state.settings.editFillImageMode = previous.editFillImageMode;
     renderAll();
   }
 }
@@ -1499,6 +1673,8 @@ function resetData() {
 
 async function generatePdf() {
   normalizeSettings();
+  const previousEditMode = state.settings.editFillImageMode;
+  state.settings.editFillImageMode = false;
   renderPreview();
   const area = $('#pdfArea');
   const pages = $$('.menu-page', area);
@@ -1506,6 +1682,8 @@ async function generatePdf() {
   const filename = `cardapio-${(state.restaurant.name || 'restaurante').toLowerCase().replace(/\s+/g, '-')}.pdf`;
 
   if (!pages.length) {
+    state.settings.editFillImageMode = previousEditMode;
+    renderPreview();
     alert('Nenhuma página encontrada para exportar.');
     return;
   }
@@ -1513,6 +1691,8 @@ async function generatePdf() {
   try {
     if (window.jspdf?.jsPDF && window.html2canvas) {
       await generateManualPdf(pages, config, filename);
+      state.settings.editFillImageMode = previousEditMode;
+      renderPreview();
       return;
     }
   } catch (error) {
@@ -1535,10 +1715,14 @@ async function generatePdf() {
     };
     await window.html2pdf().set(options).from(clone).save();
     clone.remove();
+    state.settings.editFillImageMode = previousEditMode;
+    renderPreview();
     return;
   }
 
   window.print();
+  state.settings.editFillImageMode = previousEditMode;
+  renderPreview();
 }
 
 async function generateManualPdf(pages, config, filename) {
@@ -1595,9 +1779,62 @@ function setupCollapsiblePanels() {
   });
 }
 
+
+function applyFillImageVisual(pageNumber) {
+  const pageKey = String(pageNumber);
+  const filler = $(`.page-filler-photo[data-page="${pageKey}"]`);
+  if (!filler) return;
+  const pos = getFillImagePosition(pageKey);
+  const scale = clampFillImageScale(state.settings.pageFillImageScales?.[pageKey] || 100) / 100;
+  filler.style.setProperty('--fill-x', `${pos.x}%`);
+  filler.style.setProperty('--fill-y', `${pos.y}%`);
+  filler.style.setProperty('--fill-scale', scale);
+}
+
+function setFillPositionFromPointer(event) {
+  if (!fillImageDrag?.element) return;
+  const rect = fillImageDrag.element.getBoundingClientRect();
+  const x = clampPercent(((event.clientX - rect.left) / rect.width) * 100, 50);
+  const y = clampPercent(((event.clientY - rect.top) / rect.height) * 100, 50);
+  const page = fillImageDrag.page;
+  state.settings.pageFillImagePositions[page] = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  fillImageDrag.element.style.setProperty('--fill-x', `${x}%`);
+  fillImageDrag.element.style.setProperty('--fill-y', `${y}%`);
+}
+
+function bindFillImageEditor() {
+  const paper = $('#pdfArea');
+  if (!paper || paper.dataset.fillEditorBound === 'true') return;
+  paper.dataset.fillEditorBound = 'true';
+
+  paper.addEventListener('pointerdown', event => {
+    if (!state.settings.editFillImageMode) return;
+    const filler = event.target.closest('.page-filler-photo');
+    if (!filler) return;
+    event.preventDefault();
+    const page = filler.dataset.page || String(filler.closest('.menu-page')?.dataset.page || getLayoutPageNumber());
+    fillImageDrag = { element: filler, page };
+    filler.classList.add('dragging');
+    setFillPositionFromPointer(event);
+  });
+
+  document.addEventListener('pointermove', event => {
+    if (!fillImageDrag) return;
+    event.preventDefault();
+    setFillPositionFromPointer(event);
+  });
+
+  document.addEventListener('pointerup', () => {
+    if (!fillImageDrag) return;
+    fillImageDrag.element.classList.remove('dragging');
+    fillImageDrag = null;
+  });
+}
+
 function renderAll() {
   normalizeSettings();
   setupCollapsiblePanels();
+  bindFillImageEditor();
   if (!isBound) {
     bindSettings();
     $('#sectionFilter').addEventListener('change', event => { activeSection = event.target.value; renderEditor(); renderPreview(); });
