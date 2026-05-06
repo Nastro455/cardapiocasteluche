@@ -972,3 +972,103 @@ html { scroll-behavior: smooth; }
   .page-filler-photo.editable { outline: 0; }
   .page-filler-photo.editable::after { display: none; }
 }
+
+/* ===== V18.1: correção do arraste da foto de preenchimento ===== */
+.page-filler-photo.editable,
+.page-filler-photo.editable * {
+  touch-action: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.page-filler-photo.editable img {
+  pointer-events: auto;
+}
+.page-filler-photo.dragging {
+  outline-color: var(--gold, #c9973f) !important;
+  box-shadow: 0 0 0 3px rgba(201,151,63,.26), inset 0 0 0 1px rgba(255,255,255,.22);
+}
+
+
+/* ===== V19: correções de categoria, proporção das imagens e PDF vetorial ===== */
+.category-handle span:first-child {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.exporting-image-pdf .category-handle,
+.printing-vector-pdf .category-handle,
+.exporting-image-pdf .folder-section h3,
+.printing-vector-pdf .folder-section h3 {
+  background: linear-gradient(135deg, var(--header-start), var(--header-end)) !important;
+  color: #fff !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+.exporting-image-pdf .category-handle span:first-child,
+.printing-vector-pdf .category-handle span:first-child {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+.exporting-image-pdf .manual-page-badge,
+.printing-vector-pdf .manual-page-badge,
+.exporting-image-pdf .manually-positioned h3::after,
+.printing-vector-pdf .manually-positioned h3::after {
+  display: none !important;
+}
+
+.folder-thumb,
+.item-image img,
+.folder-qr img,
+.header-logo,
+.page-filler-photo img {
+  image-rendering: auto;
+  max-width: none;
+}
+.folder-thumb,
+.item-image img,
+.page-filler-photo img {
+  object-fit: cover !important;
+}
+.header-logo,
+.folder-qr img {
+  object-fit: contain !important;
+}
+
+/* Evita deformação visual da foto de preenchimento no PDF e no preview */
+.page-filler-photo {
+  display: block;
+}
+.page-filler-photo img {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: inherit !important;
+  display: block !important;
+}
+
+.btn#btnVectorPdf {
+  background: linear-gradient(135deg, var(--gold), #ffdf86);
+  color: #241708;
+}
+
+@media print {
+  body.printing-vector-pdf {
+    background: #fff !important;
+  }
+  body.printing-vector-pdf .no-print,
+  body.printing-vector-pdf .app-header,
+  body.printing-vector-pdf .sidebar,
+  body.printing-vector-pdf .preview-toolbar {
+    display: none !important;
+  }
+  body.printing-vector-pdf .folder-section h3 span:first-child {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+  }
+  body.printing-vector-pdf .price-balloon {
+    background: #fff !important;
+    color: #181818 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

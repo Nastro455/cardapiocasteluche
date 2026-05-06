@@ -139,3 +139,18 @@ O botão **Exportar cardápio público** continua disponível para gerar um HTML
 - Adicionado controle de escala da foto de preenchimento por página.
 - Adicionado botão **Centralizar foto** para restaurar posição e escala da imagem da página selecionada.
 - A marcação de edição não aparece no PDF nem no cardápio público exportado.
+
+## Atualização V18.1
+
+- Corrigido o modo de arrastar a foto de preenchimento no preview.
+- Ao adicionar uma foto de preenchimento, a ferramenta aplica zoom inicial de 120% para permitir reposicionamento sem criar bordas vazias.
+- O arraste agora funciona com clique/segurar no mouse e também em telas touch.
+
+
+## Atualização V19
+
+- Corrige o clique no título/balão da categoria para mover a seção entre páginas.
+- Adiciona o botão **PDF vetorial**, recomendado para fechar PDF com textos e elementos editáveis pelo mecanismo de impressão do navegador.
+- Mantém **PDF imagem** como modo de compatibilidade, mas ele funciona como uma imagem renderizada da página.
+- Reforça a preservação de proporção das imagens no preview e na exportação.
+- Ajusta o texto dos títulos de categoria para não sumir na exportação.

@@ -858,9 +858,13 @@ function bindSettings() {
   $('#pageFillImageUpload').addEventListener('change', event => readImageFile(event.target.files?.[0], dataUrl => {
     const page = String(getLayoutPageNumber());
     state.settings.pageFillImages[page] = dataUrl;
+    state.settings.pageFillImagePositions[page] = state.settings.pageFillImagePositions[page] || { x: 50, y: 50 };
+    // Começa com leve zoom para permitir reposicionamento sem criar bordas vazias.
+    state.settings.pageFillImageScales[page] = state.settings.pageFillImageScales[page] || 120;
     event.target.value = '';
+    updatePageLayoutControls();
     renderPreview();
-    toast(`Foto de preenchimento aplicada na página ${page}.`);
+    toast(`Foto de preenchimento aplicada na página ${page}. Ative o modo editar e arraste no preview.`);
   }));
 
   $('#btnClearFillImage').addEventListener('click', () => {
@@ -891,10 +895,10 @@ function bindSettings() {
   $('#btnResetFillPosition')?.addEventListener('click', () => {
     const page = String(getLayoutPageNumber());
     state.settings.pageFillImagePositions[page] = { x: 50, y: 50 };
-    state.settings.pageFillImageScales[page] = 100;
+    state.settings.pageFillImageScales[page] = 120;
     updatePageLayoutControls();
     applyFillImageVisual(page);
-    toast(`Posição e escala da foto da página ${page} restauradas.`);
+    toast(`Foto da página ${page} centralizada com zoom seguro para arrastar.`);
   });
 }
 
@@ -1673,6 +1677,7 @@ function resetData() {
 
 async function generatePdf() {
   normalizeSettings();
+  document.body.classList.add('exporting-image-pdf');
   const previousEditMode = state.settings.editFillImageMode;
   state.settings.editFillImageMode = false;
   renderPreview();
@@ -1683,6 +1688,7 @@ async function generatePdf() {
 
   if (!pages.length) {
     state.settings.editFillImageMode = previousEditMode;
+    document.body.classList.remove('exporting-image-pdf');
     renderPreview();
     alert('Nenhuma página encontrada para exportar.');
     return;
@@ -1692,6 +1698,7 @@ async function generatePdf() {
     if (window.jspdf?.jsPDF && window.html2canvas) {
       await generateManualPdf(pages, config, filename);
       state.settings.editFillImageMode = previousEditMode;
+      document.body.classList.remove('exporting-image-pdf');
       renderPreview();
       return;
     }
@@ -1716,12 +1723,14 @@ async function generatePdf() {
     await window.html2pdf().set(options).from(clone).save();
     clone.remove();
     state.settings.editFillImageMode = previousEditMode;
+    document.body.classList.remove('exporting-image-pdf');
     renderPreview();
     return;
   }
 
   window.print();
   state.settings.editFillImageMode = previousEditMode;
+  document.body.classList.remove('exporting-image-pdf');
   renderPreview();
 }
 
@@ -1743,6 +1752,75 @@ async function generateManualPdf(pages, config, filename) {
     pdf.addImage(imgData, 'JPEG', 0, 0, config.widthMm, config.heightMm, undefined, 'FAST');
   }
   pdf.save(filename);
+}
+
+
+function getPrintPageSize(config) {
+  const format = state.settings.pageFormat || 'folder-9-a4';
+  if (format === 'a4-landscape' || format === 'duplex-a4-landscape') return 'A4 landscape';
+  if (format === 'duplex-a3-landscape') return 'A3 landscape';
+  if (format === 'a5-portrait') return 'A5 portrait';
+  if (format === 'feed-4x5' || format === 'story-9x16') return `${config.widthMm}mm ${config.heightMm}mm`;
+  return 'A4 portrait';
+}
+
+function updateDynamicPrintStyle() {
+  const config = getCurrentConfig();
+  let style = document.getElementById('dynamicPrintStyle');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'dynamicPrintStyle';
+    document.head.appendChild(style);
+  }
+  style.textContent = `
+    @media print {
+      @page { size: ${getPrintPageSize(config)}; margin: 0; }
+      html, body { width: ${config.widthMm}mm; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      .no-print, .app-header, .sidebar, .preview-toolbar { display: none !important; }
+      .workspace { display: block !important; padding: 0 !important; margin: 0 !important; }
+      .preview-shell { overflow: visible !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; }
+      .paper.menu-book { width: ${config.widthMm}mm !important; display: block !important; gap: 0 !important; margin: 0 !important; box-shadow: none !important; background: transparent !important; }
+      .menu-page { width: ${config.widthMm}mm !important; height: ${config.heightMm}mm !important; margin: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: hidden !important; page-break-after: always !important; break-after: page !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .menu-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+      .folder-section h3, .folder-section h3 span, .header-text-brand h2, .folder-item-top strong, .folder-desc, .folder-meta, .price-balloon { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .folder-section h3 span:first-child { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+    }
+  `;
+}
+
+function generateVectorPdf() {
+  normalizeSettings();
+  const previousEditMode = state.settings.editFillImageMode;
+  state.settings.editFillImageMode = false;
+  renderPreview();
+  updateDynamicPrintStyle();
+
+  document.body.classList.add('printing-vector-pdf');
+  toast('Na janela que abrir, escolha “Salvar como PDF”. Esse modo preserva textos e vetores melhor do que o PDF imagem.');
+
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove('printing-vector-pdf');
+      state.settings.editFillImageMode = previousEditMode;
+      renderPreview();
+    }, 600);
+  }, 120);
+}
+
+function bindCategoryMoveEditor() {
+  const paper = $('#pdfArea');
+  if (!paper || paper.dataset.categoryMoveBound === 'true') return;
+  paper.dataset.categoryMoveBound = 'true';
+
+  paper.addEventListener('click', event => {
+    const handle = event.target.closest?.('.category-handle');
+    if (!handle) return;
+    const sectionName = handle.dataset.sectionName;
+    const currentPage = Number(handle.dataset.currentPage || handle.closest('.menu-page')?.dataset.page || 1);
+    if (!sectionName) return;
+    openSectionPageMenu(sectionName, currentPage, event);
+  }, true);
 }
 
 
@@ -1793,13 +1871,54 @@ function applyFillImageVisual(pageNumber) {
 
 function setFillPositionFromPointer(event) {
   if (!fillImageDrag?.element) return;
-  const rect = fillImageDrag.element.getBoundingClientRect();
-  const x = clampPercent(((event.clientX - rect.left) / rect.width) * 100, 50);
-  const y = clampPercent(((event.clientY - rect.top) / rect.height) * 100, 50);
+  const rect = fillImageDrag.rect || fillImageDrag.element.getBoundingClientRect();
+  const deltaX = ((event.clientX - fillImageDrag.startX) / Math.max(1, rect.width)) * 100;
+  const deltaY = ((event.clientY - fillImageDrag.startY) / Math.max(1, rect.height)) * 100;
+
+  // Movimento invertido para parecer que o usuário está puxando a foto, não o recorte.
+  const x = clampPercent(fillImageDrag.startPos.x - deltaX, 50);
+  const y = clampPercent(fillImageDrag.startPos.y - deltaY, 50);
   const page = fillImageDrag.page;
+
   state.settings.pageFillImagePositions[page] = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
   fillImageDrag.element.style.setProperty('--fill-x', `${x}%`);
   fillImageDrag.element.style.setProperty('--fill-y', `${y}%`);
+}
+
+function beginFillImageDrag(event, filler) {
+  if (!state.settings.editFillImageMode || !filler) return;
+  event.preventDefault();
+  event.stopPropagation();
+
+  const page = filler.dataset.page || String(filler.closest('.menu-page')?.dataset.page || getLayoutPageNumber());
+  state.settings.pageFillImagePositions[page] = state.settings.pageFillImagePositions[page] || { x: 50, y: 50 };
+
+  // Se estiver sem zoom, o arraste pode não ser perceptível. Subimos para 120% automaticamente.
+  const currentScale = clampFillImageScale(state.settings.pageFillImageScales?.[page] || 100);
+  if (currentScale <= 100) {
+    state.settings.pageFillImageScales[page] = 120;
+    filler.style.setProperty('--fill-scale', 1.2);
+    updatePageLayoutControls();
+  }
+
+  fillImageDrag = {
+    element: filler,
+    page,
+    rect: filler.getBoundingClientRect(),
+    startX: event.clientX,
+    startY: event.clientY,
+    startPos: getFillImagePosition(page),
+    pointerId: event.pointerId
+  };
+
+  filler.classList.add('dragging');
+  try { filler.setPointerCapture(event.pointerId); } catch (error) { /* Alguns navegadores não suportam em todos os elementos. */ }
+}
+
+function endFillImageDrag() {
+  if (!fillImageDrag) return;
+  fillImageDrag.element.classList.remove('dragging');
+  fillImageDrag = null;
 }
 
 function bindFillImageEditor() {
@@ -1807,34 +1926,28 @@ function bindFillImageEditor() {
   if (!paper || paper.dataset.fillEditorBound === 'true') return;
   paper.dataset.fillEditorBound = 'true';
 
+  // Delegação robusta: funciona mesmo quando o preview é recriado.
   paper.addEventListener('pointerdown', event => {
-    if (!state.settings.editFillImageMode) return;
-    const filler = event.target.closest('.page-filler-photo');
-    if (!filler) return;
-    event.preventDefault();
-    const page = filler.dataset.page || String(filler.closest('.menu-page')?.dataset.page || getLayoutPageNumber());
-    fillImageDrag = { element: filler, page };
-    filler.classList.add('dragging');
-    setFillPositionFromPointer(event);
-  });
+    const filler = event.target.closest?.('.page-filler-photo');
+    beginFillImageDrag(event, filler);
+  }, true);
 
   document.addEventListener('pointermove', event => {
     if (!fillImageDrag) return;
     event.preventDefault();
     setFillPositionFromPointer(event);
-  });
+  }, { passive: false });
 
-  document.addEventListener('pointerup', () => {
-    if (!fillImageDrag) return;
-    fillImageDrag.element.classList.remove('dragging');
-    fillImageDrag = null;
-  });
+  document.addEventListener('pointerup', endFillImageDrag, true);
+  document.addEventListener('pointercancel', endFillImageDrag, true);
 }
+
 
 function renderAll() {
   normalizeSettings();
   setupCollapsiblePanels();
   bindFillImageEditor();
+  bindCategoryMoveEditor();
   if (!isBound) {
     bindSettings();
     $('#sectionFilter').addEventListener('change', event => { activeSection = event.target.value; renderEditor(); renderPreview(); });
@@ -1852,6 +1965,7 @@ function renderAll() {
     $('#btnExportPreset').addEventListener('click', exportPreset);
     $('#presetImport').addEventListener('change', event => { if (event.target.files?.[0]) importPreset(event.target.files[0]); event.target.value = ''; });
     $('#btnReset').addEventListener('click', resetData);
+    $('#btnVectorPdf')?.addEventListener('click', generateVectorPdf);
     $('#btnPdf').addEventListener('click', generatePdf);
     $('#jsonImport').addEventListener('change', event => { if (event.target.files?.[0]) importJson(event.target.files[0]); event.target.value = ''; });
     isBound = true;
