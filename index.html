@@ -166,10 +166,43 @@
             <span id="imageScaleLabel" class="range-value">100%</span>
           </div>
         </label>
+        <div class="page-layout-tools">
+          <h3>Diagramação por página</h3>
+          <div class="grid-2">
+            <label>Página
+              <input id="layoutPageNumber" type="number" min="1" value="1" />
+            </label>
+            <label>Layout da página
+              <select id="pageLayoutSelect">
+                <option value="auto">Automático</option>
+                <option value="classic">Clássico equilibrado</option>
+                <option value="compact">Compacto sem respiro</option>
+                <option value="magazine">Editorial com destaque</option>
+                <option value="photo-left">Fotos laterais maiores</option>
+                <option value="photo-top">Foto no topo do item</option>
+                <option value="price-focus">Preço em evidência</option>
+                <option value="list">Lista elegante</option>
+                <option value="grid-3">Grade 3 colunas</option>
+                <option value="grid-4">Grade 4 colunas</option>
+                <option value="poster">Poster compacto</option>
+              </select>
+            </label>
+          </div>
+          <div class="mini-actions">
+            <button class="btn ghost" id="btnApplyLayoutAll" type="button">Aplicar layout em todas</button>
+            <button class="btn ghost" id="btnClearPageLayout" type="button">Limpar layout da página</button>
+          </div>
+          <label>Foto para preencher espaço em branco
+            <input id="pageFillImageUpload" type="file" accept="image/*" />
+          </label>
+          <div class="mini-actions">
+            <button class="btn ghost" id="btnClearFillImage" type="button">Remover foto desta página</button>
+          </div>
+        </div>
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">Agora você pode testar <strong>10 paletas</strong>, <strong>10 marcas d'água</strong> e ajustar a fonte em níveis seguros. Os formatos <strong>Frente e verso</strong> travam o limite em 2 páginas para impressão dupla-face.</p>
+        <p class="panel-note">Além das paletas e marcas d'água, agora cada página pode ter um layout próprio. A ferramenta tenta manter cada categoria inteira na mesma página e a foto de preenchimento ajuda a evitar espaços em branco.</p>
       </section>
 
 
@@ -204,9 +237,10 @@
         <div class="mini-actions">
           <button class="btn secondary" id="btnAddItem">+ Adicionar item</button>
           <button class="btn warning" id="btnZeroCategory">Limpar valores da categoria</button>
+          <button class="btn danger" id="btnDeleteCategory">Eliminar categoria</button>
           <button class="btn danger" id="btnReset">Restaurar base</button>
         </div>
-        <p class="panel-note">Quando os valores forem limpos, o preço não aparece como <strong>R$ 0,00</strong>. O cardápio exibe apenas o <strong>balão branco vazio</strong> para você preencher depois.</p>
+        <p class="panel-note">Você pode limpar preços ou eliminar a categoria selecionada. A opção eliminar remove os itens daquela categoria apenas do tipo de cardápio atual.</p>
         <div id="editorList" class="editor-list"></div>
       </section>
     </aside>

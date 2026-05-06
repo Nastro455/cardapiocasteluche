@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'casteluche-menu-generator-v15-duplex';
-const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v15';
+const STORAGE_KEY = 'casteluche-menu-generator-v16-layouts-sem-branco';
+const PRESET_STORAGE_KEY = 'casteluche-menu-presets-v16';
 const DEFAULT_MAX_PAGES = 9;
 const MAX_ALLOWED_PAGES = 99;
 let state = structuredClone(window.MENU_DATA || {});
@@ -119,6 +119,8 @@ const WATERMARKS = {
 };
 
 const FONT_SCALE_OPTIONS = [92, 96, 100, 104, 108];
+const PAGE_LAYOUT_OPTIONS = ['auto', 'classic', 'compact', 'magazine', 'photo-left', 'photo-top', 'price-focus', 'list', 'grid-3', 'grid-4', 'poster'];
+
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -198,6 +200,8 @@ function normalizeSettings() {
     showDigitalMenu: false,
     watermark: 'none',
     fontScale: 100,
+    pageLayouts: {},
+    pageFillImages: {},
     ...(state.settings || {})
   };
   if (!FORMAT_CONFIGS[state.settings.pageFormat]) state.settings.pageFormat = 'folder-9-a4';
@@ -210,6 +214,8 @@ function normalizeSettings() {
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.settings.imageScale = clampImageScale(state.settings.imageScale);
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
+  state.settings.pageLayouts = state.settings.pageLayouts && typeof state.settings.pageLayouts === 'object' ? state.settings.pageLayouts : {};
+  state.settings.pageFillImages = state.settings.pageFillImages && typeof state.settings.pageFillImages === 'object' ? state.settings.pageFillImages : {};
   const currentFormat = FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
   if (currentFormat.fixedMaxPages) state.settings.maxPages = currentFormat.fixedMaxPages;
   state.items = Array.isArray(state.items) ? state.items : [];
@@ -247,6 +253,37 @@ function getCurrentConfig() {
 function getMaxPagesForCurrentFormat() {
   const config = getCurrentConfig();
   return config.fixedMaxPages ? config.fixedMaxPages : clampPages(state.settings.maxPages);
+}
+
+function getLayoutPageNumber() {
+  const input = $('#layoutPageNumber');
+  const value = Number(input?.value || 1);
+  return Math.max(1, Math.min(MAX_ALLOWED_PAGES, Math.round(Number.isNaN(value) ? 1 : value)));
+}
+
+function getPageLayout(pageNumber) {
+  const layout = state.settings.pageLayouts?.[String(pageNumber)] || state.settings.pageLayouts?.[pageNumber] || 'auto';
+  return PAGE_LAYOUT_OPTIONS.includes(layout) ? layout : 'auto';
+}
+
+function getResolvedPageLayout(page, pageNumber) {
+  const selected = getPageLayout(pageNumber);
+  if (selected !== 'auto') return selected;
+  const totalItems = (page.sections || []).reduce((sum, section) => sum + (section.items?.length || 0), 0);
+  const hasImage = (page.sections || []).some(section => (section.items || []).some(item => item.image));
+  if (state.settings.showImages && hasImage && totalItems <= 8) return 'photo-left';
+  if (totalItems > 34) return 'grid-4';
+  if (totalItems > 22) return 'grid-3';
+  if (totalItems > 15) return 'compact';
+  return 'classic';
+}
+
+function updatePageLayoutControls() {
+  const page = String(getLayoutPageNumber());
+  const select = $('#pageLayoutSelect');
+  if (select) select.value = getPageLayout(page);
+  const upload = $('#pageFillImageUpload');
+  if (upload) upload.title = state.settings.pageFillImages?.[page] ? 'Esta página já possui foto de preenchimento.' : 'Nenhuma foto aplicada nesta página.';
 }
 
 function updateMaxPagesControlState() {
@@ -512,7 +549,8 @@ function setControlValues() {
     logoScale: state.settings.logoScale,
     imageScale: state.settings.imageScale,
     maxPages: state.settings.maxPages,
-    headerBrandMode: state.settings.headerBrandMode
+    headerBrandMode: state.settings.headerBrandMode,
+    layoutPageNumber: getLayoutPageNumber()
   };
   Object.entries(values).forEach(([id, value]) => {
     const el = $('#' + id);
@@ -530,6 +568,7 @@ function setControlValues() {
   const imageScaleLabel = $('#imageScaleLabel');
   if (imageScaleLabel) imageScaleLabel.textContent = `${state.settings.imageScale}%`;
   updateMaxPagesControlState();
+  updatePageLayoutControls();
 }
 
 function bindSettings() {
@@ -658,6 +697,48 @@ function bindSettings() {
   $('#breakBySection').addEventListener('change', event => {
     state.settings.breakBySection = event.target.checked;
     renderPreview();
+  });
+
+  $('#layoutPageNumber').addEventListener('input', event => {
+    event.target.value = getLayoutPageNumber();
+    updatePageLayoutControls();
+  });
+
+  $('#pageLayoutSelect').addEventListener('change', event => {
+    const page = String(getLayoutPageNumber());
+    state.settings.pageLayouts[page] = event.target.value;
+    renderPreview();
+  });
+
+  $('#btnApplyLayoutAll').addEventListener('click', () => {
+    const layout = $('#pageLayoutSelect').value || 'auto';
+    const max = getMaxPagesForCurrentFormat();
+    for (let page = 1; page <= max; page += 1) state.settings.pageLayouts[String(page)] = layout;
+    renderPreview();
+    toast('Layout aplicado em todas as páginas.');
+  });
+
+  $('#btnClearPageLayout').addEventListener('click', () => {
+    const page = String(getLayoutPageNumber());
+    delete state.settings.pageLayouts[page];
+    updatePageLayoutControls();
+    renderPreview();
+    toast('Layout personalizado removido desta página.');
+  });
+
+  $('#pageFillImageUpload').addEventListener('change', event => readImageFile(event.target.files?.[0], dataUrl => {
+    const page = String(getLayoutPageNumber());
+    state.settings.pageFillImages[page] = dataUrl;
+    event.target.value = '';
+    renderPreview();
+    toast(`Foto de preenchimento aplicada na página ${page}.`);
+  }));
+
+  $('#btnClearFillImage').addEventListener('click', () => {
+    const page = String(getLayoutPageNumber());
+    delete state.settings.pageFillImages[page];
+    renderPreview();
+    toast(`Foto de preenchimento removida da página ${page}.`);
   });
 }
 
@@ -819,6 +900,7 @@ function paginateSections(sections, maxPages, config) {
   const pages = [{ sections: [], weight: 0 }];
   let pageIndex = 0;
   let overflowCount = 0;
+  const sectionHeaderWeight = 1.25;
 
   const goNextPage = () => {
     if (pageIndex + 1 >= maxPages) return false;
@@ -827,57 +909,27 @@ function paginateSections(sections, maxPages, config) {
     return true;
   };
 
-  const sectionHeaderWeight = 1.25;
-
-  function addChunk(name, items, continuation = false) {
-    const chunkWeight = sectionHeaderWeight + items.reduce((total, item) => total + itemWeight(item), 0);
-    pages[pageIndex].sections.push({ name, items, continuation });
-    pages[pageIndex].weight += chunkWeight;
+  function sectionWeight(section) {
+    return sectionHeaderWeight + section.items.reduce((total, item) => total + itemWeight(item), 0);
   }
 
   sections.forEach(section => {
-    let remaining = [...section.items];
-    let continuation = false;
-    while (remaining.length) {
-      const currentPage = pages[pageIndex];
-      const available = pageCapacity(pageIndex, config) - currentPage.weight - sectionHeaderWeight;
+    const weight = sectionWeight(section);
+    const current = pages[pageIndex];
+    const capacity = pageCapacity(pageIndex, config);
 
-      if (state.settings.breakBySection && currentPage.sections.length && !continuation) {
-        if (goNextPage()) continue;
-      }
-
-      if (available < 1 && currentPage.sections.length) {
-        if (goNextPage()) continue;
-      }
-
-      if (pageIndex + 1 >= maxPages && available < 1 && currentPage.sections.length) {
-        overflowCount += remaining.length;
-        addChunk(section.name, remaining.splice(0), true);
-        break;
-      }
-
-      let chunk = [];
-      let chunkWeight = 0;
-      while (remaining.length) {
-        const next = remaining[0];
-        const nextWeight = itemWeight(next);
-        const limit = Math.max(1.05, pageCapacity(pageIndex, config) - pages[pageIndex].weight - sectionHeaderWeight);
-        if (chunk.length && chunkWeight + nextWeight > limit) break;
-        chunk.push(remaining.shift());
-        chunkWeight += nextWeight;
-        if (chunkWeight >= limit) break;
-      }
-
-      if (!chunk.length && remaining.length) chunk.push(remaining.shift());
-      addChunk(section.name, chunk, continuation);
-      continuation = true;
-
-      if (remaining.length && !goNextPage()) {
-        overflowCount += remaining.length;
-        addChunk(section.name, remaining.splice(0), true);
-        break;
-      }
+    // Mantém a categoria inteira em uma página. Se não couber junto com a página atual,
+    // ela começa na página seguinte. Não criamos mais "continuação de categoria".
+    if (current.sections.length && current.weight + weight > capacity) {
+      goNextPage();
     }
+
+    if (pageIndex + 1 >= maxPages && pages[pageIndex].sections.length && pages[pageIndex].weight + weight > pageCapacity(pageIndex, config)) {
+      overflowCount += section.items.length;
+    }
+
+    pages[pageIndex].sections.push({ name: section.name, items: section.items, continuation: false, forceFit: weight > pageCapacity(pageIndex, config) });
+    pages[pageIndex].weight += weight;
   });
 
   return { pages: pages.filter(page => page.sections.length), overflowCount };
@@ -932,13 +984,14 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, men
     ? `<div class="folder-warning">Há conteúdo demais na última página. Tente reduzir descrições, diminuir a fonte, trocar para densidade compacta ou organizar o layout novamente.</div>`
     : '';
   return `
-    <article class="menu-page" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
+    <article class="menu-page page-layout-${getResolvedPageLayout(page, pageNumber)}" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
       ${renderWatermark()}
       ${renderPageHeader(pageNumber, totalPages)}
       <main class="folder-body">
         ${state.settings.showDigitalMenu && pageNumber === 1 ? renderDigitalMenu(menuSections) : ''}
         ${overflowWarning}
         ${page.sections.length ? page.sections.map(renderFolderSection).join('') : '<div class="empty-page">Espaço reservado para novos itens.</div>'}
+        ${renderPageFiller(pageNumber)}
       </main>
       <footer class="folder-footer">
         <span>Valores sujeitos à alteração.</span>
@@ -1027,15 +1080,26 @@ function renderDigitalMenu(sectionNames = []) {
 }
 
 function renderFolderSection(section) {
-  const title = section.continuation ? `${section.name} — continuação` : section.name;
-  const idAttr = !section.continuation ? ` id="cat-${slugify(section.name)}"` : '';
+  const idAttr = ` id="cat-${slugify(section.name)}"`;
+  const count = section.items?.length || 0;
+  const sizeClass = count > 28 ? 'fit-xlarge' : count > 18 ? 'fit-large' : count > 10 ? 'fit-medium' : 'fit-small';
   return `
-    <section class="folder-section"${idAttr}>
-      <h3>${escapeHtml(title)}</h3>
+    <section class="folder-section ${sizeClass}${section.forceFit ? ' force-fit' : ''}"${idAttr}>
+      <h3>${escapeHtml(section.name)}</h3>
       <div class="folder-grid">
         ${section.items.map(renderFolderItem).join('')}
       </div>
     </section>
+  `;
+}
+
+function renderPageFiller(pageNumber) {
+  const image = state.settings.pageFillImages?.[String(pageNumber)];
+  if (!image) return '';
+  return `
+    <div class="page-filler-photo" aria-label="Foto para preencher espaço em branco">
+      <img src="${image}" alt="Foto de preenchimento da página ${pageNumber}" />
+    </div>
   `;
 }
 
@@ -1088,7 +1152,6 @@ function autoLayout() {
   const config = getCurrentConfig();
   if (config.fixedMaxPages) state.settings.maxPages = config.fixedMaxPages;
   state.settings.density = 'compact';
-  state.settings.showImages = false;
   state.settings.breakBySection = false;
   state.settings.showDescriptions = !['feed-4x5', 'story-9x16'].includes(selectedFormat);
   state.settings.fontScale = selectedFormat === 'folder-9-a4' ? 96 : 100;
@@ -1131,6 +1194,23 @@ function zeroCategoryPrices() {
 
   renderAll();
   toast(isAll ? 'Todos os preços foram limpos. Os balões ficaram vazios.' : `Preços limpos em “${activeSection}”. O balão continua branco e vazio.`);
+}
+
+function deleteCategory() {
+  if (activeSection === 'Todos') {
+    alert('Escolha uma categoria específica no filtro antes de eliminar. A opção “Todos” não pode ser eliminada de uma vez.');
+    return;
+  }
+  const targets = state.items.filter(item => (item.section || 'Sem seção') === activeSection);
+  if (!targets.length) {
+    alert('Não encontrei itens nessa categoria.');
+    return;
+  }
+  if (!confirm(`Eliminar a categoria “${activeSection}” com ${targets.length} item(ns)? Essa ação remove os itens apenas do tipo de cardápio atual.`)) return;
+  state.items = state.items.filter(item => (item.section || 'Sem seção') !== activeSection);
+  activeSection = 'Todos';
+  renderAll();
+  toast('Categoria eliminada do cardápio atual.');
 }
 
 function addItem() {
@@ -1525,6 +1605,7 @@ function renderAll() {
     $('#btnAddItem').addEventListener('click', addItem);
     $('#btnAutoLayout').addEventListener('click', autoLayout);
     $('#btnZeroCategory').addEventListener('click', zeroCategoryPrices);
+    $('#btnDeleteCategory').addEventListener('click', deleteCategory);
     $('#btnSave').addEventListener('click', saveData);
     $('#btnExport').addEventListener('click', exportJson);
     $('#btnPublicHtml').addEventListener('click', exportPublicCardapio);
