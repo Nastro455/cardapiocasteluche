@@ -1000,6 +1000,7 @@ function groupItemsForLayout(items) {
         availability: item.availability || '',
         _order: index,
         _dayRank: weeklyDayRank(item.availability || ''),
+        rawIds: [],
         variants: []
       });
     }
@@ -1007,6 +1008,7 @@ function groupItemsForLayout(items) {
     if (!group.image && item.image) group.image = item.image;
     group._order = Math.min(group._order, index);
     group._dayRank = Math.min(group._dayRank, weeklyDayRank(item.availability || ''));
+    if (item.id && !group.rawIds.includes(item.id)) group.rawIds.push(item.id);
     group.variants.push({
       label: buildVariantLabel(item),
       price: item.price || '',
@@ -1301,8 +1303,12 @@ function renderFolderItem(item) {
         </span>`).join('')}
     </div>` : '';
 
+  const itemIds = Array.isArray(item.rawIds) && item.rawIds.length ? item.rawIds.join('|') : (item.id || '');
+  const deleteLabel = `Remover ${item.product} do cardápio`;
+
   return `
-    <article class="folder-item ${image ? 'with-thumb' : ''}">
+    <article class="folder-item ${image ? 'with-thumb' : ''}" data-item-ids="${escapeHtml(itemIds)}" data-product-name="${escapeHtml(item.product)}">
+      <button class="preview-item-delete no-print" type="button" title="${escapeHtml(deleteLabel)}" aria-label="${escapeHtml(deleteLabel)}">×</button>
       ${image}
       <div class="folder-item-main">
         <div class="folder-item-top">
@@ -1408,6 +1414,35 @@ function deleteCategory() {
   renderAll();
   saveData();
   toast(`Categoria “${sectionToDelete}” eliminada do cardápio atual.`);
+}
+
+
+function deletePreviewItemByIds(ids = [], productName = 'item') {
+  const cleanIds = ids.map(id => String(id || '').trim()).filter(Boolean);
+  if (!cleanIds.length) {
+    alert('Não consegui identificar esse item para remover. Tente apagar pelo editor lateral.');
+    return;
+  }
+
+  const targets = state.items.filter(item => cleanIds.includes(String(item.id)));
+  const label = productName || targets[0]?.product || 'item';
+  const variantText = targets.length > 1 ? ` e suas ${targets.length} variações` : '';
+
+  if (!confirm(`Remover “${label}”${variantText} do cardápio atual?`)) return;
+
+  const idSet = new Set(cleanIds);
+  state.items = state.items.filter(item => !idSet.has(String(item.id)));
+
+  const currentMenuType = state.menuType || 'especial';
+  state.menuBanks = state.menuBanks && typeof state.menuBanks === 'object' ? state.menuBanks : {};
+  state.menuBanks[currentMenuType] = state.items;
+
+  const remainingSections = new Set(state.items.map(item => item.section || 'Sem seção'));
+  if (activeSection !== 'Todos' && !remainingSections.has(activeSection)) activeSection = 'Todos';
+
+  renderAll();
+  saveData();
+  toast(`“${label}” removido do cardápio atual.`);
 }
 
 function addItem() {
@@ -1965,11 +2000,30 @@ function bindFillImageEditor() {
 }
 
 
+
+function bindPreviewItemDelete() {
+  const paper = $('#pdfArea');
+  if (!paper || paper.dataset.previewItemDeleteBound === 'true') return;
+  paper.dataset.previewItemDeleteBound = 'true';
+
+  paper.addEventListener('click', event => {
+    const button = event.target.closest?.('.preview-item-delete');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const itemEl = button.closest('.folder-item');
+    const ids = String(itemEl?.dataset.itemIds || '').split('|');
+    const productName = itemEl?.dataset.productName || '';
+    deletePreviewItemByIds(ids, productName);
+  }, true);
+}
+
 function renderAll() {
   normalizeSettings();
   setupCollapsiblePanels();
   bindFillImageEditor();
   bindCategoryMoveEditor();
+  bindPreviewItemDelete();
   if (!isBound) {
     bindSettings();
     $('#sectionFilter').addEventListener('change', event => { activeSection = event.target.value; renderEditor(); renderPreview(); });
