@@ -1072,3 +1072,39 @@ html { scroll-behavior: smooth; }
     print-color-adjust: exact !important;
   }
 }
+
+/* ===== V20: legenda fixa nas fotos de preenchimento ===== */
+.filler-caption {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 4;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.84);
+  color: rgba(20,18,15,.86);
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  font-size: 8.5px;
+  line-height: 1;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .055em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.page-filler-photo.editable .filler-caption {
+  right: 12px;
+  bottom: 12px;
+}
+@media print {
+  .filler-caption {
+    display: inline-flex !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* V20.1: avisos internos nunca entram no PDF/exportação */
+.folder-warning { display: none !important; }
+@media print { .folder-warning { display: none !important; } }

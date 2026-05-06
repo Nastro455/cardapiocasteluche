@@ -1135,15 +1135,14 @@ function renderPreview() {
   paper.innerHTML = pages.map((page, index) => renderMenuPage(page, index + 1, pages.length, result.overflowCount, config, menuSections)).join('');
   const pageInfo = $('#pageInfo');
   if (pageInfo) {
-    const overflow = result.overflowCount > 0 ? ` · ${result.overflowCount} item(ns) concentrados na última página` : '';
-    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}${overflow}`;
+    pageInfo.textContent = `${pages.length} página(s) · ${config.label} · limite ${maxPages}`;
   }
 }
 
 function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, menuSections) {
-  const overflowWarning = overflowCount > 0 && pageNumber === totalPages
-    ? `<div class="folder-warning">Há conteúdo demais na última página. Tente reduzir descrições, diminuir a fonte, trocar para densidade compacta ou organizar o layout novamente.</div>`
-    : '';
+  // V20.1: o aviso de excesso não é mais renderizado dentro das páginas.
+  // Ele atrapalhava o fechamento do PDF quando o operador já havia ajustado manualmente o layout.
+  const overflowWarning = '';
   return `
     <article class="menu-page page-layout-${getResolvedPageLayout(page, pageNumber)}" id="${pageNumber === 1 ? 'menu-root' : `page-${pageNumber}`}" data-page="${pageNumber}">
       ${renderWatermark()}
@@ -1274,6 +1273,7 @@ function renderPageFiller(pageNumber) {
   return `
     <div class="page-filler-photo${editableClass}" data-page="${pageKey}" aria-label="Foto para preencher espaço em branco" style="--fill-x:${position.x}%; --fill-y:${position.y}%; --fill-scale:${scale};">
       <img src="${image}" alt="Foto de preenchimento da página ${pageNumber}" />
+      <span class="filler-caption">Imagem meramente ilustrativa</span>
     </div>
   `;
 }
