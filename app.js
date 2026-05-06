@@ -323,6 +323,104 @@ function clearManualSectionPage(sectionName) {
   delete state.settings.manualSectionPages[key];
 }
 
+function getNumericPriceValue(item) {
+  if (typeof item?.priceValue === 'number' && !Number.isNaN(item.priceValue)) return item.priceValue;
+  const priceText = String(item?.price || '').trim();
+  if (!priceText || priceText.toLowerCase().includes('revis')) return null;
+  const normalized = priceText.replace(/\./g, '').replace(',', '.').replace(/[^\d.]/g, '');
+  const parsed = Number(normalized);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function itemOriginalRank(item) {
+  const idNumber = String(item?.id || '').match(/\d+/)?.[0];
+  const parsed = Number(idNumber);
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+}
+
+function variantRank(item) {
+  const text = [item?.option, item?.volume, item?.serve, item?.availability].join(' ').toLowerCase();
+  if (text.includes('individual') || text === 'p' || text.includes('pequena')) return 1;
+  if (text.includes('casal') || text === 'm' || text.includes('media') || text.includes('média')) return 2;
+  if (text.includes('famil') || text === 'g' || text.includes('grande')) return 3;
+  const price = getNumericPriceValue(item);
+  return price == null ? 999 : 20 + price;
+}
+
+function getSortableGroupsForSection(sectionName) {
+  const map = new Map();
+  state.items
+    .filter(item => (item.section || 'Sem seção') === sectionName)
+    .forEach((item, index) => {
+      const key = [item.product || 'Sem nome', item.description || '', item.notes || '', item.availability || ''].join('::');
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          product: item.product || 'Sem nome',
+          firstIndex: index,
+          originalRank: itemOriginalRank(item),
+          rawItems: [],
+          prices: []
+        });
+      }
+      const group = map.get(key);
+      group.rawItems.push(item);
+      const price = getNumericPriceValue(item);
+      if (price != null) group.prices.push(price);
+      group.originalRank = Math.min(group.originalRank, itemOriginalRank(item));
+    });
+
+  return Array.from(map.values()).map(group => ({
+    ...group,
+    minPrice: group.prices.length ? Math.min(...group.prices) : null,
+    maxPrice: group.prices.length ? Math.max(...group.prices) : null
+  }));
+}
+
+function sortSectionItems(sectionName, mode = 'alpha-asc') {
+  const groups = getSortableGroupsForSection(sectionName);
+  if (!groups.length) {
+    alert('Não encontrei itens nessa categoria para organizar.');
+    return;
+  }
+
+  const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
+  const byName = (a, b) => collator.compare(a.product, b.product) || (a.originalRank - b.originalRank);
+  const byOriginal = (a, b) => (a.originalRank - b.originalRank) || byName(a, b);
+  const valueForAsc = group => group.minPrice == null ? Number.POSITIVE_INFINITY : group.minPrice;
+  const valueForDesc = group => group.maxPrice == null ? Number.NEGATIVE_INFINITY : group.maxPrice;
+
+  const sortedGroups = [...groups].sort((a, b) => {
+    if (mode === 'alpha-desc') return byName(b, a);
+    if (mode === 'price-asc') return (valueForAsc(a) - valueForAsc(b)) || byName(a, b);
+    if (mode === 'price-desc') return (valueForDesc(b) - valueForDesc(a)) || byName(a, b);
+    if (mode === 'original') return byOriginal(a, b);
+    return byName(a, b);
+  });
+
+  const sortedSectionItems = sortedGroups.flatMap(group =>
+    [...group.rawItems].sort((a, b) => variantRank(a) - variantRank(b) || itemOriginalRank(a) - itemOriginalRank(b))
+  );
+
+  const queue = [...sortedSectionItems];
+  state.items = state.items.map(item => (item.section || 'Sem seção') === sectionName ? queue.shift() : item);
+
+  const currentMenuType = state.menuType || 'especial';
+  state.menuBanks = state.menuBanks && typeof state.menuBanks === 'object' ? state.menuBanks : {};
+  state.menuBanks[currentMenuType] = state.items;
+  renderAll();
+  saveData();
+
+  const labels = {
+    'alpha-asc': 'ordem alfabética A-Z',
+    'alpha-desc': 'ordem alfabética Z-A',
+    'price-asc': 'menor preço primeiro',
+    'price-desc': 'maior preço primeiro',
+    original: 'ordem original'
+  };
+  toast(`Categoria “${sectionName}” organizada por ${labels[mode] || 'ordem alfabética'}.`);
+}
+
 function ensurePage(pages, index) {
   while (pages.length <= index) pages.push({ sections: [], weight: 0 });
   pages[index] = pages[index] || { sections: [], weight: 0 };
@@ -362,12 +460,25 @@ function openSectionPageMenu(sectionName, currentPage, event) {
   popover.style.top = `${Math.min(window.innerHeight - 220, Math.max(16, rect.bottom + 8))}px`;
   popover.innerHTML = `
     <strong>${escapeHtml(sectionName)}</strong>
-    <span>Escolha em qual página esta categoria deve ficar.</span>
-    <div class="popover-actions">
-      <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
-      <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
-      <button type="button" data-action="choose">Escolher página</button>
-      <button type="button" data-action="auto">Automático</button>
+    <span>Mova a categoria entre páginas ou organize os pratos desta categoria.</span>
+    <div class="popover-group">
+      <em>Página</em>
+      <div class="popover-actions">
+        <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
+        <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
+        <button type="button" data-action="choose">Escolher página</button>
+        <button type="button" data-action="auto">Voltar para automático</button>
+      </div>
+    </div>
+    <div class="popover-group">
+      <em>Organizar pratos</em>
+      <div class="popover-actions">
+        <button type="button" data-action="sort-alpha-asc">A-Z alfabética</button>
+        <button type="button" data-action="sort-alpha-desc">Z-A alfabética</button>
+        <button type="button" data-action="sort-price-asc">Menor preço primeiro</button>
+        <button type="button" data-action="sort-price-desc">Maior preço primeiro</button>
+        <button type="button" data-action="sort-original">Ordem original</button>
+      </div>
     </div>
   `;
   document.body.appendChild(popover);
@@ -376,6 +487,12 @@ function openSectionPageMenu(sectionName, currentPage, event) {
     const button = e.target.closest('button[data-action]');
     if (!button || button.disabled) return;
     const action = button.dataset.action;
+    if (action.startsWith('sort-')) {
+      const sortMode = action.replace('sort-', '');
+      popover.remove();
+      sortSectionItems(sectionName, sortMode);
+      return;
+    }
     if (action === 'up') setManualSectionPage(sectionName, currentPage - 1);
     if (action === 'down') setManualSectionPage(sectionName, currentPage + 1);
     if (action === 'choose') {

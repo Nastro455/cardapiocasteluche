@@ -158,3 +158,13 @@ O botão **Exportar cardápio público** continua disponível para gerar um HTML
 ## Atualização V20.2
 
 - Corrigido o botão de eliminar categoria: agora a categoria também é removida do banco do tipo de cardápio atual e some da lista/preview imediatamente.
+
+## Atualização V20.4
+
+- Ao clicar no título/balão de uma categoria no preview, além de mover a categoria entre páginas, agora é possível organizar os itens daquela categoria por:
+  - ordem alfabética A-Z;
+  - ordem alfabética Z-A;
+  - menor preço primeiro;
+  - maior preço primeiro;
+  - ordem original.
+- A organização afeta apenas o tipo de cardápio selecionado no momento.

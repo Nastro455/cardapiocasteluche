@@ -879,7 +879,7 @@ html { scroll-behavior: smooth; }
 .category-page-popover {
   position: fixed;
   z-index: 10000;
-  width: 260px;
+  width: 300px;
   padding: 14px;
   border-radius: 18px;
   background: rgba(20, 15, 10, .96);
@@ -901,6 +901,22 @@ html { scroll-behavior: smooth; }
   line-height: 1.35;
   margin-bottom: 10px;
 }
+
+.popover-group {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.popover-group:first-of-type { margin-top: 0; }
+.popover-group em {
+  font-style: normal;
+  color: rgba(255,255,255,.52);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
 .popover-actions {
   display: grid;
   gap: 7px;
