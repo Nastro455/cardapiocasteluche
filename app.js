@@ -1376,16 +1376,38 @@ function deleteCategory() {
     alert('Escolha uma categoria específica no filtro antes de eliminar. A opção “Todos” não pode ser eliminada de uma vez.');
     return;
   }
-  const targets = state.items.filter(item => (item.section || 'Sem seção') === activeSection);
+
+  const sectionToDelete = activeSection;
+  const currentMenuType = state.menuType || 'especial';
+  const targets = state.items.filter(item => (item.section || 'Sem seção') === sectionToDelete);
+
   if (!targets.length) {
     alert('Não encontrei itens nessa categoria.');
     return;
   }
-  if (!confirm(`Eliminar a categoria “${activeSection}” com ${targets.length} item(ns)? Essa ação remove os itens apenas do tipo de cardápio atual.`)) return;
-  state.items = state.items.filter(item => (item.section || 'Sem seção') !== activeSection);
+
+  if (!confirm(`Eliminar a categoria “${sectionToDelete}” com ${targets.length} item(ns)? Essa ação remove os itens apenas do tipo de cardápio atual.`)) return;
+
+  // Remove da lista em uso.
+  state.items = state.items.filter(item => (item.section || 'Sem seção') !== sectionToDelete);
+
+  // IMPORTANTE: também atualiza o banco do tipo de cardápio atual.
+  // Sem isso, o normalizeSettings/ensureMenuTypes recarregava a categoria antiga.
+  state.menuBanks = state.menuBanks && typeof state.menuBanks === 'object' ? state.menuBanks : {};
+  state.menuBanks[currentMenuType] = state.items;
+
+  // Limpa posicionamentos manuais ligados à categoria apagada.
+  if (state.settings?.manualSectionPages) {
+    delete state.settings.manualSectionPages[sectionToDelete];
+  }
+
   activeSection = 'Todos';
+  const sectionFilter = $('#sectionFilter');
+  if (sectionFilter) sectionFilter.value = 'Todos';
+
   renderAll();
-  toast('Categoria eliminada do cardápio atual.');
+  saveData();
+  toast(`Categoria “${sectionToDelete}” eliminada do cardápio atual.`);
 }
 
 function addItem() {

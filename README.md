@@ -154,3 +154,7 @@ O botão **Exportar cardápio público** continua disponível para gerar um HTML
 - Mantém **PDF imagem** como modo de compatibilidade, mas ele funciona como uma imagem renderizada da página.
 - Reforça a preservação de proporção das imagens no preview e na exportação.
 - Ajusta o texto dos títulos de categoria para não sumir na exportação.
+
+## Atualização V20.2
+
+- Corrigido o botão de eliminar categoria: agora a categoria também é removida do banco do tipo de cardápio atual e some da lista/preview imediatamente.
