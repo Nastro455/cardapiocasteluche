@@ -213,6 +213,7 @@ function normalizeSettings() {
     pageFillImagePositions: {},
     pageFillImageScales: {},
     editFillImageMode: false,
+    interfaceMode: 'simple',
     manualSectionPages: {},
     ...(state.settings || {})
   };
@@ -238,6 +239,7 @@ function normalizeSettings() {
   state.settings.pageFillImagePositions = state.settings.pageFillImagePositions && typeof state.settings.pageFillImagePositions === 'object' ? state.settings.pageFillImagePositions : {};
   state.settings.pageFillImageScales = state.settings.pageFillImageScales && typeof state.settings.pageFillImageScales === 'object' ? state.settings.pageFillImageScales : {};
   state.settings.editFillImageMode = state.settings.editFillImageMode === true;
+  if (!['simple', 'advanced'].includes(state.settings.interfaceMode)) state.settings.interfaceMode = 'simple';
   state.settings.manualSectionPages = state.settings.manualSectionPages && typeof state.settings.manualSectionPages === 'object' ? state.settings.manualSectionPages : {};
   const currentFormat = FORMAT_CONFIGS[state.settings.pageFormat] || FORMAT_CONFIGS['folder-9-a4'];
   if (currentFormat.fixedMaxPages) state.settings.maxPages = currentFormat.fixedMaxPages;
@@ -483,10 +485,23 @@ function openSectionPageMenu(sectionName, currentPage, event) {
   const renderChoice = () => {
     popover.innerHTML = `
       <strong>${escapeHtml(sectionName)}</strong>
-      <span>Escolha o que deseja ajustar nesta categoria.</span>
-      <div class="category-action-choice">
-        <button type="button" data-panel="page">Mover página</button>
-        <button type="button" data-panel="sort">Organizar pratos</button>
+      <span>Escolha a ação para esta categoria. Agora os comandos ficam abertos direto, sem depender de um segundo clique.</span>
+      <div class="category-action-columns">
+        <div class="category-action-card">
+          <b>↕ Mover página</b>
+          <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
+          <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
+          <button type="button" data-action="choose">Escolher página</button>
+          <button type="button" data-action="auto">Voltar automático</button>
+        </div>
+        <div class="category-action-card alt">
+          <b>⇅ Organizar pratos</b>
+          <button type="button" data-action="sort-alpha-asc">A-Z alfabética</button>
+          <button type="button" data-action="sort-alpha-desc">Z-A alfabética</button>
+          <button type="button" data-action="sort-price-asc">Menor preço</button>
+          <button type="button" data-action="sort-price-desc">Maior preço</button>
+          <button type="button" data-action="sort-original">Ordem original</button>
+        </div>
       </div>
     `;
   };
@@ -523,9 +538,11 @@ function openSectionPageMenu(sectionName, currentPage, event) {
   renderChoice();
   document.body.appendChild(popover);
 
-  popover.addEventListener('click', e => {
+  popover.addEventListener('pointerdown', e => {
     const panelButton = e.target.closest('button[data-panel]');
     if (panelButton) {
+      e.preventDefault();
+      e.stopPropagation();
       if (panelButton.dataset.panel === 'page') renderPagePanel();
       if (panelButton.dataset.panel === 'sort') renderSortPanel();
       return;
@@ -533,6 +550,8 @@ function openSectionPageMenu(sectionName, currentPage, event) {
 
     const button = e.target.closest('button[data-action]');
     if (!button || button.disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
     const action = button.dataset.action;
     if (action === 'back') { renderChoice(); return; }
     if (action.startsWith('sort-')) {
@@ -597,6 +616,15 @@ function updateMaxPagesControlState() {
 
 function getPalette() {
   return PALETTES[state.settings.theme] || PALETTES.boteco;
+}
+
+
+function applyInterfaceMode() {
+  const mode = state.settings?.interfaceMode === 'advanced' ? 'advanced' : 'simple';
+  document.body.classList.toggle('advanced-mode', mode === 'advanced');
+  document.body.classList.toggle('simple-mode', mode !== 'advanced');
+  const select = $('#interfaceModeSelect');
+  if (select) select.value = mode;
 }
 
 function getWatermarkDataUrl() {
@@ -828,6 +856,7 @@ function orderItemsForPrint() {
 
 function setControlValues() {
   const values = {
+    interfaceModeSelect: state.settings.interfaceMode || 'simple',
     menuTypeSelect: state.menuType || 'especial',
     restaurantName: state.restaurant.name || '',
     restaurantWhatsapp: state.restaurant.whatsapp || '',
@@ -881,10 +910,31 @@ function setControlValues() {
   if (imageScaleLabel) imageScaleLabel.textContent = `${state.settings.imageScale}%`;
   updateMaxPagesControlState();
   updatePageLayoutControls();
+  applyInterfaceMode();
 }
 
 function bindSettings() {
   setControlValues();
+
+  const interfaceModeSelect = $('#interfaceModeSelect');
+  if (interfaceModeSelect) interfaceModeSelect.addEventListener('change', event => {
+    state.settings.interfaceMode = event.target.value === 'advanced' ? 'advanced' : 'simple';
+    applyInterfaceMode();
+    saveData();
+    toast(state.settings.interfaceMode === 'advanced' ? 'Modo avançado ativado.' : 'Modo simples ativado.');
+  });
+
+  const topAutoLayout = $('#btnAutoLayoutTop');
+  if (topAutoLayout) topAutoLayout.addEventListener('click', () => {
+    const btn = $('#btnAutoLayout');
+    if (btn) btn.click();
+  });
+
+  const topVectorPdf = $('#btnVectorPdfTop');
+  if (topVectorPdf) topVectorPdf.addEventListener('click', () => {
+    const btn = $('#btnVectorPdf');
+    if (btn) btn.click();
+  });
 
   const menuTypeSelect = $('#menuTypeSelect');
   if (menuTypeSelect) menuTypeSelect.addEventListener('change', event => switchMenuType(event.target.value));

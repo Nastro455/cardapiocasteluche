@@ -13,7 +13,7 @@
   <script defer src="data/menu-data.js"></script>
   <script defer src="app.js"></script>
 </head>
-<body>
+<body class="simple-mode">
   <header class="app-header no-print">
     <div>
       <p class="eyebrow">Casteluche</p>
@@ -22,20 +22,41 @@
     </div>
     <div class="header-actions">
       <button class="btn ghost" id="btnSave">Salvar no navegador</button>
-      <button class="btn ghost" id="btnExport">Exportar JSON</button>
-      <label class="btn ghost file-label" for="jsonImport">Importar JSON</label>
+      <button class="btn ghost advanced-only" id="btnExport">Exportar JSON</button>
+      <label class="btn ghost file-label advanced-only" for="jsonImport">Importar JSON</label>
       <input id="jsonImport" type="file" accept="application/json" hidden />
-      <button class="btn ghost gold" id="btnPublicHtml">Exportar cardápio público</button>
-      <button class="btn primary" id="btnVectorPdf">PDF vetorial</button>
-      <button class="btn ghost" id="btnPdf">PDF imagem</button>
+      <button class="btn ghost gold" id="btnPublicHtml">Cardápio público</button>
+      <button class="btn primary" id="btnVectorPdf">Gerar PDF</button>
+      <button class="btn ghost advanced-only" id="btnPdf">PDF imagem</button>
     </div>
   </header>
 
   <main class="workspace">
     <aside class="sidebar no-print">
-      <section class="panel menu-type-panel">
+      <section class="panel mode-panel">
         <div class="panel-title">
           <span>01</span>
+          <h2>Modo de uso</h2>
+        </div>
+        <label>Como você quer trabalhar?
+          <select id="interfaceModeSelect">
+            <option value="simple">Modo simples — editar e exportar</option>
+            <option value="advanced">Modo avançado — ajustes finos</option>
+          </select>
+        </label>
+        <div class="mode-explain">
+          <p><strong>Simples:</strong> mostra só o essencial para atualizar cardápio, organizar e gerar PDF.</p>
+          <p><strong>Avançado:</strong> libera presets, layouts por página, fontes separadas, fundo personalizado e exportações técnicas.</p>
+        </div>
+        <div class="quick-actions-row">
+          <button class="btn secondary" id="btnAutoLayoutTop" type="button">Organizar automaticamente</button>
+          <button class="btn primary" id="btnVectorPdfTop" type="button">Gerar PDF</button>
+        </div>
+      </section>
+
+      <section class="panel menu-type-panel">
+        <div class="panel-title">
+          <span>02</span>
           <h2>Tipo de cardápio</h2>
         </div>
         <label>Escolha qual base deseja editar
@@ -51,7 +72,7 @@
 
       <section class="panel">
         <div class="panel-title">
-          <span>02</span>
+          <span>03</span>
           <h2>Dados do restaurante</h2>
         </div>
         <label>Nome do restaurante<input id="restaurantName" type="text" /></label>
@@ -89,9 +110,10 @@
 
       <section class="panel">
         <div class="panel-title">
-          <span>03</span>
+          <span>04</span>
           <h2>Formato e visual</h2>
         </div>
+        <p class="simple-helper">No modo simples, ajuste formato, paleta, limite e clique em organizar. Os detalhes finos ficam no modo avançado.</p>
         <div class="grid-2">
           <label>Formato
             <select id="pageFormat">
@@ -144,7 +166,7 @@
             </select>
           </label>
         </div>
-        <div class="grid-2">
+        <div class="grid-2 advanced-only">
           <label>Imagem de fundo / marca d'água
             <input id="watermarkImageUpload" type="file" accept="image/*" />
           </label>
@@ -155,7 +177,7 @@
             </div>
           </label>
         </div>
-        <div class="mini-actions">
+        <div class="mini-actions advanced-only">
           <button class="btn ghost" id="btnClearWatermarkImage" type="button">Remover imagem de fundo</button>
         </div>
         <div class="grid-2">
@@ -169,7 +191,7 @@
             </div>
           </label>
         </div>
-        <div class="font-controls-grid">
+        <div class="font-controls-grid advanced-only">
           <label>Fonte da categoria
             <div class="range-stack"><input id="categoryFontScale" type="range" min="70" max="150" step="5" value="100" /><span id="categoryFontScaleLabel" class="range-value">100%</span></div>
           </label>
@@ -190,15 +212,15 @@
           <label><input id="showDescriptions" type="checkbox" /> Mostrar descrições</label>
           <label><input id="showImages" type="checkbox" /> Mostrar imagens</label>
           <label><input id="showDigitalMenu" type="checkbox" /> Adicionar menu digital com atalhos</label>
-          <label><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
+          <label class="advanced-only"><input id="breakBySection" type="checkbox" /> Quebrar página por seção</label>
         </div>
-        <label>Escala das imagens dos itens
+        <label class="advanced-only">Escala das imagens dos itens
           <div class="range-stack">
             <input id="imageScale" type="range" min="60" max="160" step="5" value="100" />
             <span id="imageScaleLabel" class="range-value">100%</span>
           </div>
         </label>
-        <div class="page-layout-tools">
+        <div class="page-layout-tools advanced-only">
           <h3>Diagramação por página</h3>
           <div class="grid-2">
             <label>Página
@@ -245,13 +267,13 @@
         <div class="mini-actions layout-actions">
           <button class="btn secondary" id="btnAutoLayout" type="button">Organizar layout selecionado</button>
         </div>
-        <p class="panel-note">Além das paletas e marcas d'água, cada página pode ter um layout próprio. Clique no balão/título de uma categoria no preview para escolher se ela fica na página de cima, de baixo ou em uma página específica.</p>
+        <p class="panel-note advanced-only">Além das paletas e marcas d'água, cada página pode ter um layout próprio. Clique no balão/título de uma categoria no preview para escolher se ela fica na página de cima, de baixo ou em uma página específica.</p>
       </section>
 
 
-      <section class="panel">
+      <section class="panel advanced-only">
         <div class="panel-title">
-          <span>04</span>
+          <span>05</span>
           <h2>Presets completos</h2>
         </div>
         <label>Presets salvos neste navegador
@@ -272,7 +294,7 @@
 
       <section class="panel">
         <div class="panel-title">
-          <span>05</span>
+          <span>06</span>
           <h2>Editar itens</h2>
         </div>
         <input id="searchInput" class="search" placeholder="Buscar produto, categoria ou preço..." />

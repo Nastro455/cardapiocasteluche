@@ -168,3 +168,39 @@ O botão **Exportar cardápio público** continua disponível para gerar um HTML
   - maior preço primeiro;
   - ordem original.
 - A organização afeta apenas o tipo de cardápio selecionado no momento.
+
+## Atualização V21 — interface limpa
+
+Esta versão reorganiza a ferramenta para reduzir poluição visual e facilitar o uso por operadores leigos.
+
+### Modo simples
+Mostra apenas o essencial para atualizar e exportar o cardápio:
+
+- escolher tipo de cardápio;
+- editar dados do restaurante;
+- selecionar formato, paleta, limite de páginas e visual básico;
+- editar produtos e preços;
+- organizar automaticamente;
+- gerar PDF;
+- exportar cardápio público.
+
+### Modo avançado
+Libera os controles técnicos e finos:
+
+- presets completos;
+- exportar/importar JSON;
+- PDF imagem alternativo;
+- ajustes independentes de fonte;
+- tamanho do balão de preço;
+- imagem de fundo personalizada;
+- diagramação por página;
+- foto de preenchimento;
+- escala avançada das imagens.
+
+A lógica principal da ferramenta foi mantida, mas a interface agora separa o uso comum dos ajustes avançados.
+
+## Atualização V21.1
+
+- O menu ao clicar na categoria foi simplificado.
+- Agora as ações de **Mover página** e **Organizar pratos** aparecem abertas no mesmo pop-up.
+- Isso evita o problema de clicar nos dois balões e não abrir o submenu.
