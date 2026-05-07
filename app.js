@@ -472,116 +472,89 @@ function applyManualSectionPageOverrides(pages, maxPages) {
 function openSectionPageMenu(sectionName, currentPage, event) {
   event?.preventDefault?.();
   event?.stopPropagation?.();
-  $('.category-page-popover')?.remove();
+  document.querySelectorAll('.category-page-popover').forEach(el => el.remove());
 
   const max = getMaxPagesForCurrentFormat();
   const anchor = event?.target?.closest?.('.category-handle') || event?.currentTarget;
   const rect = anchor?.getBoundingClientRect?.() || { left: 24, top: 120, bottom: 150 };
   const popover = document.createElement('div');
   popover.className = 'category-page-popover category-action-popover no-print';
-  popover.style.left = `${Math.min(window.innerWidth - 320, Math.max(16, rect.left))}px`;
-  popover.style.top = `${Math.min(window.innerHeight - 270, Math.max(16, rect.bottom + 8))}px`;
-
-  const renderChoice = () => {
-    popover.innerHTML = `
+  popover.style.left = `${Math.min(window.innerWidth - 360, Math.max(16, rect.left))}px`;
+  popover.style.top = `${Math.min(window.innerHeight - 420, Math.max(16, rect.bottom + 10))}px`;
+  popover.innerHTML = `
+    <div class="category-menu-head">
       <strong>${escapeHtml(sectionName)}</strong>
-      <span>Escolha a ação para esta categoria. Agora os comandos ficam abertos direto, sem depender de um segundo clique.</span>
-      <div class="category-action-columns">
-        <div class="category-action-card">
-          <b>↕ Mover página</b>
-          <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
-          <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
-          <button type="button" data-action="choose">Escolher página</button>
-          <button type="button" data-action="auto">Voltar automático</button>
-        </div>
-        <div class="category-action-card alt">
-          <b>⇅ Organizar pratos</b>
-          <button type="button" data-action="sort-alpha-asc">A-Z alfabética</button>
-          <button type="button" data-action="sort-alpha-desc">Z-A alfabética</button>
-          <button type="button" data-action="sort-price-asc">Menor preço</button>
-          <button type="button" data-action="sort-price-desc">Maior preço</button>
-          <button type="button" data-action="sort-original">Ordem original</button>
-        </div>
-      </div>
-    `;
-  };
+      <button type="button" class="category-popover-close" data-action="close" aria-label="Fechar">×</button>
+    </div>
+    <span class="category-menu-help">Escolha uma ação. As opções abaixo já executam direto, sem submenu.</span>
 
-  const renderPagePanel = () => {
-    popover.innerHTML = `
-      <strong>${escapeHtml(sectionName)}</strong>
-      <span>Defina em qual página esta categoria deve aparecer.</span>
-      <div class="popover-actions">
+    <div class="category-action-block">
+      <b>↕ Mover categoria</b>
+      <div class="popover-actions popover-grid-actions">
         <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
         <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
         <button type="button" data-action="choose">Escolher página</button>
-        <button type="button" data-action="auto">Voltar para automático</button>
-        <button type="button" data-action="back">← Voltar</button>
+        <button type="button" data-action="auto">Voltar automático</button>
       </div>
-    `;
-  };
+    </div>
 
-  const renderSortPanel = () => {
-    popover.innerHTML = `
-      <strong>${escapeHtml(sectionName)}</strong>
-      <span>Escolha a ordem dos pratos desta categoria.</span>
-      <div class="popover-actions">
+    <div class="category-action-block alt">
+      <b>⇅ Organizar pratos</b>
+      <div class="popover-actions popover-grid-actions">
         <button type="button" data-action="sort-alpha-asc">A-Z alfabética</button>
         <button type="button" data-action="sort-alpha-desc">Z-A alfabética</button>
-        <button type="button" data-action="sort-price-asc">Menor preço primeiro</button>
-        <button type="button" data-action="sort-price-desc">Maior preço primeiro</button>
+        <button type="button" data-action="sort-price-asc">Menor preço</button>
+        <button type="button" data-action="sort-price-desc">Maior preço</button>
         <button type="button" data-action="sort-original">Ordem original</button>
-        <button type="button" data-action="back">← Voltar</button>
       </div>
-    `;
+    </div>
+  `;
+
+  const closePopover = () => {
+    popover.remove();
+    document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
   };
 
-  renderChoice();
-  document.body.appendChild(popover);
-
-  popover.addEventListener('pointerdown', e => {
-    const panelButton = e.target.closest('button[data-panel]');
-    if (panelButton) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (panelButton.dataset.panel === 'page') renderPagePanel();
-      if (panelButton.dataset.panel === 'sort') renderSortPanel();
+  const runAction = action => {
+    if (!action) return;
+    if (action === 'close') {
+      closePopover();
       return;
     }
-
-    const button = e.target.closest('button[data-action]');
-    if (!button || button.disabled) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const action = button.dataset.action;
-    if (action === 'back') { renderChoice(); return; }
     if (action.startsWith('sort-')) {
-      const sortMode = action.replace('sort-', '');
-      popover.remove();
-      sortSectionItems(sectionName, sortMode);
+      closePopover();
+      sortSectionItems(sectionName, action.replace('sort-', ''));
       return;
     }
-    if (action === 'up') setManualSectionPage(sectionName, currentPage - 1);
-    if (action === 'down') setManualSectionPage(sectionName, currentPage + 1);
     if (action === 'choose') {
       const answer = prompt(`Enviar “${sectionName}” para qual página?\nDigite um número entre 1 e ${max}.`, String(currentPage));
       if (answer === null) return;
       setManualSectionPage(sectionName, answer);
     }
+    if (action === 'up') setManualSectionPage(sectionName, currentPage - 1);
+    if (action === 'down') setManualSectionPage(sectionName, currentPage + 1);
     if (action === 'auto') clearManualSectionPage(sectionName);
-    popover.remove();
+    closePopover();
     renderPreview();
-    toast('Posição da categoria atualizada.');
+    toast('Categoria atualizada.');
+  };
+
+  popover.addEventListener('click', clickEvent => {
+    const button = clickEvent.target.closest('button[data-action]');
+    if (!button || button.disabled) return;
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
+    runAction(button.dataset.action);
   });
 
-  setTimeout(() => {
-    const close = closeEvent => {
-      if (!popover.contains(closeEvent.target)) {
-        popover.remove();
-        document.removeEventListener('click', close);
-      }
-    };
-    document.addEventListener('click', close);
-  }, 0);
+  function handleOutsidePointerDown(pointerEvent) {
+    if (popover.contains(pointerEvent.target)) return;
+    if (pointerEvent.target.closest?.('.category-handle')) return;
+    closePopover();
+  }
+
+  document.body.appendChild(popover);
+  requestAnimationFrame(() => document.addEventListener('pointerdown', handleOutsidePointerDown, true));
 }
 
 function updatePageLayoutControls() {
