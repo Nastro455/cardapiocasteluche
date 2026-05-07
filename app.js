@@ -200,7 +200,14 @@ function normalizeSettings() {
     imageScale: 100,
     showDigitalMenu: false,
     watermark: 'none',
+    watermarkImage: '',
+    watermarkImageOpacity: 15,
     fontScale: 100,
+    categoryFontScale: 100,
+    titleFontScale: 100,
+    descriptionFontScale: 100,
+    priceFontScale: 100,
+    priceBalloonScale: 100,
     pageLayouts: {},
     pageFillImages: {},
     pageFillImagePositions: {},
@@ -216,6 +223,13 @@ function normalizeSettings() {
   if (!['text', 'logo'].includes(state.settings.headerBrandMode)) state.settings.headerBrandMode = 'text';
   state.settings.maxPages = clampPages(state.settings.maxPages);
   state.settings.fontScale = clampFontScale(state.settings.fontScale);
+  state.settings.categoryFontScale = clampVisualScale(state.settings.categoryFontScale, 70, 150);
+  state.settings.titleFontScale = clampVisualScale(state.settings.titleFontScale, 70, 150);
+  state.settings.descriptionFontScale = clampVisualScale(state.settings.descriptionFontScale, 70, 150);
+  state.settings.priceFontScale = clampVisualScale(state.settings.priceFontScale, 70, 160);
+  state.settings.priceBalloonScale = clampVisualScale(state.settings.priceBalloonScale, 70, 170);
+  state.settings.watermarkImageOpacity = clampVisualScale(state.settings.watermarkImageOpacity, 0, 45, 15);
+  state.settings.watermarkImage = typeof state.settings.watermarkImage === 'string' ? state.settings.watermarkImage : '';
   state.settings.logoScale = clampLogoScale(state.settings.logoScale);
   state.settings.imageScale = clampImageScale(state.settings.imageScale);
   state.settings.showDigitalMenu = state.settings.showDigitalMenu === true;
@@ -241,6 +255,12 @@ function clampFontScale(value) {
   const parsed = Number(value || 100);
   const nearest = FONT_SCALE_OPTIONS.reduce((prev, current) => Math.abs(current - parsed) < Math.abs(prev - parsed) ? current : prev, 100);
   return nearest;
+}
+
+function clampVisualScale(value, min = 70, max = 150, fallback = 100) {
+  const parsed = Number(value ?? fallback);
+  if (Number.isNaN(parsed)) return fallback;
+  return Math.max(min, Math.min(max, Math.round(parsed)));
 }
 
 function clampLogoScale(value) {
@@ -453,40 +473,68 @@ function openSectionPageMenu(sectionName, currentPage, event) {
   $('.category-page-popover')?.remove();
 
   const max = getMaxPagesForCurrentFormat();
-  const rect = event?.currentTarget?.getBoundingClientRect?.() || { left: 24, top: 120, bottom: 150 };
+  const anchor = event?.target?.closest?.('.category-handle') || event?.currentTarget;
+  const rect = anchor?.getBoundingClientRect?.() || { left: 24, top: 120, bottom: 150 };
   const popover = document.createElement('div');
-  popover.className = 'category-page-popover no-print';
-  popover.style.left = `${Math.min(window.innerWidth - 280, Math.max(16, rect.left))}px`;
-  popover.style.top = `${Math.min(window.innerHeight - 220, Math.max(16, rect.bottom + 8))}px`;
-  popover.innerHTML = `
-    <strong>${escapeHtml(sectionName)}</strong>
-    <span>Mova a categoria entre páginas ou organize os pratos desta categoria.</span>
-    <div class="popover-group">
-      <em>Página</em>
+  popover.className = 'category-page-popover category-action-popover no-print';
+  popover.style.left = `${Math.min(window.innerWidth - 320, Math.max(16, rect.left))}px`;
+  popover.style.top = `${Math.min(window.innerHeight - 270, Math.max(16, rect.bottom + 8))}px`;
+
+  const renderChoice = () => {
+    popover.innerHTML = `
+      <strong>${escapeHtml(sectionName)}</strong>
+      <span>Escolha o que deseja ajustar nesta categoria.</span>
+      <div class="category-action-choice">
+        <button type="button" data-panel="page">Mover página</button>
+        <button type="button" data-panel="sort">Organizar pratos</button>
+      </div>
+    `;
+  };
+
+  const renderPagePanel = () => {
+    popover.innerHTML = `
+      <strong>${escapeHtml(sectionName)}</strong>
+      <span>Defina em qual página esta categoria deve aparecer.</span>
       <div class="popover-actions">
         <button type="button" data-action="up" ${currentPage <= 1 ? 'disabled' : ''}>↑ Página de cima</button>
         <button type="button" data-action="down" ${currentPage >= max ? 'disabled' : ''}>↓ Página de baixo</button>
         <button type="button" data-action="choose">Escolher página</button>
         <button type="button" data-action="auto">Voltar para automático</button>
+        <button type="button" data-action="back">← Voltar</button>
       </div>
-    </div>
-    <div class="popover-group">
-      <em>Organizar pratos</em>
+    `;
+  };
+
+  const renderSortPanel = () => {
+    popover.innerHTML = `
+      <strong>${escapeHtml(sectionName)}</strong>
+      <span>Escolha a ordem dos pratos desta categoria.</span>
       <div class="popover-actions">
         <button type="button" data-action="sort-alpha-asc">A-Z alfabética</button>
         <button type="button" data-action="sort-alpha-desc">Z-A alfabética</button>
         <button type="button" data-action="sort-price-asc">Menor preço primeiro</button>
         <button type="button" data-action="sort-price-desc">Maior preço primeiro</button>
         <button type="button" data-action="sort-original">Ordem original</button>
+        <button type="button" data-action="back">← Voltar</button>
       </div>
-    </div>
-  `;
+    `;
+  };
+
+  renderChoice();
   document.body.appendChild(popover);
 
   popover.addEventListener('click', e => {
+    const panelButton = e.target.closest('button[data-panel]');
+    if (panelButton) {
+      if (panelButton.dataset.panel === 'page') renderPagePanel();
+      if (panelButton.dataset.panel === 'sort') renderSortPanel();
+      return;
+    }
+
     const button = e.target.closest('button[data-action]');
     if (!button || button.disabled) return;
     const action = button.dataset.action;
+    if (action === 'back') { renderChoice(); return; }
     if (action.startsWith('sort-')) {
       const sortMode = action.replace('sort-', '');
       popover.remove();
@@ -792,6 +840,12 @@ function setControlValues() {
     densitySelect: state.settings.density,
     watermarkSelect: state.settings.watermark,
     fontScale: state.settings.fontScale,
+    categoryFontScale: state.settings.categoryFontScale,
+    titleFontScale: state.settings.titleFontScale,
+    descriptionFontScale: state.settings.descriptionFontScale,
+    priceFontScale: state.settings.priceFontScale,
+    priceBalloonScale: state.settings.priceBalloonScale,
+    watermarkImageOpacity: state.settings.watermarkImageOpacity,
     logoScale: state.settings.logoScale,
     imageScale: state.settings.imageScale,
     maxPages: state.settings.maxPages,
@@ -809,6 +863,18 @@ function setControlValues() {
   $('#showQrCode').checked = state.settings.showQrCode === true;
   const fontScaleLabel = $('#fontScaleLabel');
   if (fontScaleLabel) fontScaleLabel.textContent = `${state.settings.fontScale}%`;
+  const customScaleLabels = {
+    categoryFontScale: 'categoryFontScaleLabel',
+    titleFontScale: 'titleFontScaleLabel',
+    descriptionFontScale: 'descriptionFontScaleLabel',
+    priceFontScale: 'priceFontScaleLabel',
+    priceBalloonScale: 'priceBalloonScaleLabel',
+    watermarkImageOpacity: 'watermarkImageOpacityLabel'
+  };
+  Object.entries(customScaleLabels).forEach(([key, labelId]) => {
+    const label = $('#' + labelId);
+    if (label) label.textContent = `${state.settings[key]}%`;
+  });
   const logoScaleLabel = $('#logoScaleLabel');
   if (logoScaleLabel) logoScaleLabel.textContent = `${state.settings.logoScale}%`;
   const imageScaleLabel = $('#imageScaleLabel');
@@ -899,11 +965,44 @@ function bindSettings() {
     state.settings.watermark = event.target.value;
     renderPreview();
   });
+  $('#watermarkImageUpload')?.addEventListener('change', event => readImageFile(event.target.files?.[0], dataUrl => {
+    state.settings.watermarkImage = dataUrl;
+    renderPreview();
+    toast("Imagem de fundo aplicada como marca d\'água.");
+  }));
+  $('#watermarkImageOpacity')?.addEventListener('input', event => {
+    state.settings.watermarkImageOpacity = clampVisualScale(event.target.value, 0, 45, 15);
+    event.target.value = state.settings.watermarkImageOpacity;
+    $('#watermarkImageOpacityLabel').textContent = `${state.settings.watermarkImageOpacity}%`;
+    renderPreview();
+  });
+  $('#btnClearWatermarkImage')?.addEventListener('click', () => {
+    state.settings.watermarkImage = '';
+    const input = $('#watermarkImageUpload');
+    if (input) input.value = '';
+    renderPreview();
+    toast('Imagem de fundo removida.');
+  });
   $('#fontScale').addEventListener('input', event => {
     state.settings.fontScale = clampFontScale(event.target.value);
     event.target.value = state.settings.fontScale;
     $('#fontScaleLabel').textContent = `${state.settings.fontScale}%`;
     renderPreview();
+  });
+  [
+    ['categoryFontScale', 70, 150],
+    ['titleFontScale', 70, 150],
+    ['descriptionFontScale', 70, 150],
+    ['priceFontScale', 70, 160],
+    ['priceBalloonScale', 70, 170]
+  ].forEach(([id, min, max]) => {
+    $('#' + id)?.addEventListener('input', event => {
+      state.settings[id] = clampVisualScale(event.target.value, min, max);
+      event.target.value = state.settings[id];
+      const label = $('#' + id + 'Label');
+      if (label) label.textContent = `${state.settings[id]}%`;
+      renderPreview();
+    });
   });
   $('#logoScale').addEventListener('input', event => {
     state.settings.logoScale = clampLogoScale(event.target.value);
@@ -1223,6 +1322,11 @@ function applyPaperVariables(paper) {
   paper.style.setProperty('--page-h', `${config.heightPx}px`);
   paper.style.setProperty('--folder-columns', config.columns);
   paper.style.setProperty('--font-scale', `${state.settings.fontScale / 100}`);
+  paper.style.setProperty('--category-font-scale', `${state.settings.categoryFontScale / 100}`);
+  paper.style.setProperty('--title-font-scale', `${state.settings.titleFontScale / 100}`);
+  paper.style.setProperty('--description-font-scale', `${state.settings.descriptionFontScale / 100}`);
+  paper.style.setProperty('--price-font-scale', `${state.settings.priceFontScale / 100}`);
+  paper.style.setProperty('--price-balloon-scale', `${state.settings.priceBalloonScale / 100}`);
   paper.style.setProperty('--logo-scale', `${state.settings.logoScale / 100}`);
   paper.style.setProperty('--image-scale', `${state.settings.imageScale / 100}`);
   paper.style.setProperty('--paper-bg', palette.paper);
@@ -1282,8 +1386,12 @@ function renderMenuPage(page, pageNumber, totalPages, overflowCount, config, men
 
 function renderWatermark() {
   const entry = WATERMARKS[state.settings.watermark] || WATERMARKS.none;
-  if (!entry.svg) return '';
-  return `<div class="page-watermark" aria-hidden="true">${entry.svg.replaceAll('%23', '#')}</div>`;
+  const svg = entry.svg ? `<div class="page-watermark-svg">${entry.svg.replaceAll('%23', '#')}</div>` : '';
+  const customImage = state.settings.watermarkImage
+    ? `<img class="page-watermark-image" src="${state.settings.watermarkImage}" alt="Imagem de fundo" style="opacity:${(state.settings.watermarkImageOpacity || 15) / 100};" />`
+    : '';
+  if (!svg && !customImage) return '';
+  return `<div class="page-watermark" aria-hidden="true">${customImage}${svg}</div>`;
 }
 
 function renderPageHeader(pageNumber, totalPages) {

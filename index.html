@@ -145,14 +145,45 @@
           </label>
         </div>
         <div class="grid-2">
+          <label>Imagem de fundo / marca d'água
+            <input id="watermarkImageUpload" type="file" accept="image/*" />
+          </label>
+          <label>Transparência da imagem de fundo
+            <div class="range-stack">
+              <input id="watermarkImageOpacity" type="range" min="0" max="45" step="5" value="15" />
+              <span id="watermarkImageOpacityLabel" class="range-value">15%</span>
+            </div>
+          </label>
+        </div>
+        <div class="mini-actions">
+          <button class="btn ghost" id="btnClearWatermarkImage" type="button">Remover imagem de fundo</button>
+        </div>
+        <div class="grid-2">
           <label>Limite de páginas
             <input id="maxPages" type="number" min="1" max="99" value="9" />
           </label>
-          <label>Tamanho da fonte
+          <label>Fonte geral
             <div class="range-stack">
               <input id="fontScale" type="range" min="92" max="108" step="4" value="100" />
               <span id="fontScaleLabel" class="range-value">100%</span>
             </div>
+          </label>
+        </div>
+        <div class="font-controls-grid">
+          <label>Fonte da categoria
+            <div class="range-stack"><input id="categoryFontScale" type="range" min="70" max="150" step="5" value="100" /><span id="categoryFontScaleLabel" class="range-value">100%</span></div>
+          </label>
+          <label>Fonte do título do prato
+            <div class="range-stack"><input id="titleFontScale" type="range" min="70" max="150" step="5" value="100" /><span id="titleFontScaleLabel" class="range-value">100%</span></div>
+          </label>
+          <label>Fonte da descrição
+            <div class="range-stack"><input id="descriptionFontScale" type="range" min="70" max="150" step="5" value="100" /><span id="descriptionFontScaleLabel" class="range-value">100%</span></div>
+          </label>
+          <label>Fonte do valor
+            <div class="range-stack"><input id="priceFontScale" type="range" min="70" max="160" step="5" value="100" /><span id="priceFontScaleLabel" class="range-value">100%</span></div>
+          </label>
+          <label>Tamanho do balão de preço
+            <div class="range-stack"><input id="priceBalloonScale" type="range" min="70" max="170" step="5" value="100" /><span id="priceBalloonScaleLabel" class="range-value">100%</span></div>
           </label>
         </div>
         <div class="checks">
